@@ -572,7 +572,21 @@ function App() {
       {/* 
         This is the DOM node we will screenshot. 
       */}
-      <div ref={shareContainerRef} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, overflow: 'hidden', background: (shareTheme === 'NEON' || shareTheme === 'STRAVA_DARK') ? '#000' : 'transparent' }}>
+      <div 
+        ref={shareContainerRef} 
+        style={{ 
+          position: 'absolute', 
+          top: 0, 
+          left: 0, 
+          right: 0, 
+          bottom: 0, 
+          overflow: 'hidden', 
+          background: (shareTheme === 'NEON' || shareTheme === 'STRAVA_DARK') ? '#000' : 'transparent',
+          transform: (shareMode && !isCapturing) ? 'scale(0.8) translateY(-5%)' : 'none',
+          transformOrigin: 'top center',
+          transition: 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+        }}
+      >
         
         {/* MAP LAYER */}
         {activeTab === 'RIDE' && session && (
