@@ -352,6 +352,16 @@ function App() {
         statLbl: { fontSize: '10px', color: '#888', textTransform: 'uppercase', fontWeight: '600' }
       };
     }
+    if (shareTheme === 'STRAVA_DARK') {
+      return {
+        wrapper: { position: 'absolute', bottom: '120px', left: 0, right: 0, padding: '0 40px', zIndex: 50 },
+        title: { display: 'none' },
+        date: { display: 'none' },
+        statRow: { display: 'flex', justifyContent: 'space-between', borderTop: 'none', paddingTop: 0 },
+        statVal: { fontSize: '36px', fontWeight: '900', color: '#fff', textShadow: '0 2px 10px rgba(0,0,0,0.8)' },
+        statLbl: { fontSize: '12px', color: '#aaa', textTransform: 'uppercase', fontWeight: 'bold' }
+      };
+    }
   };
 
   const renderContent = () => {
@@ -561,24 +571,25 @@ function App() {
       
       {/* 
         This is the DOM node we will screenshot. 
-        It contains only the map, the route, and the strictly-positioned overlay. 
       */}
-      <div ref={shareContainerRef} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, overflow: 'hidden' }}>
+      <div ref={shareContainerRef} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, overflow: 'hidden', background: (shareTheme === 'NEON' || shareTheme === 'STRAVA_DARK') ? '#000' : 'transparent' }}>
         
         {/* MAP LAYER */}
         {activeTab === 'RIDE' && session && (
-          <div className="map-background" style={{ opacity: (shareMode && shareTheme === 'NEON') ? 0 : 1 }}>
-            <MapContainer ref={mapRef} center={currentPosition} zoom={15} zoomControl={false} style={{ height: '100%', width: '100%', backgroundColor: '#050505' }}>
-              <TileLayer
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                attribution='&copy; OpenStreetMap'
-                className="dark-map-tiles"
-              />
+          <div className="map-background" style={{ opacity: 1 }}>
+            <MapContainer ref={mapRef} center={currentPosition} zoom={15} zoomControl={false} style={{ height: '100%', width: '100%', backgroundColor: (shareTheme === 'NEON' || shareTheme === 'STRAVA_DARK') ? '#000' : '#050505' }}>
+              {!(shareMode && (shareTheme === 'NEON' || shareTheme === 'STRAVA_DARK')) && (
+                <TileLayer
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  attribution='&copy; OpenStreetMap'
+                  className="dark-map-tiles"
+                />
+              )}
               {viewingRoute && viewingRoute.route_path && <MapBoundsFitter path={viewingRoute.route_path} />}
               <Polyline 
                 positions={routePath} 
-                color={shareMode && shareTheme === 'NEON' ? '#0f0' : '#4a90e2'} 
-                weight={shareMode && shareTheme === 'NEON' ? 6 : 4} 
+                color={shareMode && shareTheme === 'NEON' ? '#0f0' : (shareMode && shareTheme === 'STRAVA_DARK' ? '#fc4c02' : '#4a90e2')} 
+                weight={shareMode ? 6 : 4} 
                 opacity={1} 
               />
               {!viewingRoute && <Marker position={currentPosition} icon={bikeIcon} />}
@@ -588,8 +599,8 @@ function App() {
 
         {/* CUSTOM LOGO FOR SHARE SCREENSHOT */}
         {shareMode && (
-           <div style={{ position: 'absolute', top: shareTheme==='MINIMAL' ? '160px' : '40px', left: '20px', zIndex: 60 }}>
-              <img src="/logo.png" alt="Mokat Touring Logo" style={{ height: '40px', width: 'auto', filter: `brightness(0) invert(1) ${shareTheme==='NEON' ? 'drop-shadow(0 0 10px #0f0)' : 'drop-shadow(0 2px 10px rgba(0,0,0,0.8))'}` }} />
+           <div style={{ position: 'absolute', bottom: shareTheme==='STRAVA_DARK' ? '40px' : 'auto', top: shareTheme==='STRAVA_DARK' ? 'auto' : (shareTheme==='MINIMAL' ? '160px' : '40px'), left: shareTheme==='STRAVA_DARK' ? '40px' : '20px', zIndex: 60 }}>
+              <img src="/logo.png" alt="Mokat Touring Logo" style={{ height: shareTheme === 'STRAVA_DARK' ? '24px' : '40px', width: 'auto', filter: `brightness(0) invert(1) ${shareTheme==='NEON' ? 'drop-shadow(0 0 10px #0f0)' : 'drop-shadow(0 2px 10px rgba(0,0,0,0.8))'}` }} />
            </div>
         )}
 
@@ -666,6 +677,7 @@ function App() {
           </div>
           
           <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '20px' }}>
+             <button onClick={() => setShareTheme('STRAVA_DARK')} className="glass-button" style={{ flex: 1, padding: '12px', minWidth: '100px', background: shareTheme === 'STRAVA_DARK' ? '#4a90e2' : 'rgba(255,255,255,0.1)' }}>Pro</button>
              <button onClick={() => setShareTheme('CLASSIC')} className="glass-button" style={{ flex: 1, padding: '12px', minWidth: '100px', background: shareTheme === 'CLASSIC' ? '#4a90e2' : 'rgba(255,255,255,0.1)' }}>Classic</button>
              <button onClick={() => setShareTheme('NEON')} className="glass-button" style={{ flex: 1, padding: '12px', minWidth: '100px', background: shareTheme === 'NEON' ? '#4a90e2' : 'rgba(255,255,255,0.1)' }}>Neon</button>
              <button onClick={() => setShareTheme('MINIMAL')} className="glass-button" style={{ flex: 1, padding: '12px', minWidth: '100px', background: shareTheme === 'MINIMAL' ? '#4a90e2' : 'rgba(255,255,255,0.1)' }}>Minimal</button>
