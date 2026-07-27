@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Square, Map as MapIcon, User, Activity, Settings, Navigation, ChevronRight, Zap, Bike, LogOut, LocateFixed, Instagram, Download } from 'lucide-react';
+import { Play, Square, Map as MapIcon, User, Activity, Navigation, ChevronRight, Zap, Bike, LogOut, LocateFixed, Camera } from 'lucide-react';
 import { MapContainer, TileLayer, Polyline, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import html2canvas from 'html2canvas';
@@ -234,9 +234,9 @@ function App() {
 
   const stopTracking = async () => {
     setIsTracking(false);
-    setStatusText("Ride Saved");
     
-    if (distance > 0 || time > 10) {
+    if (distance > 0 || time > 2) {
+      setStatusText("Saving Ride...");
       const avgSpeed = distance > 0 && time > 0 ? (distance / (time / 3600)) : 0;
       const newRide = {
         user_id: session.user.id,
@@ -245,12 +245,20 @@ function App() {
         avg_speed: avgSpeed,
         route_path: routePath
       };
+      
       const { data, error } = await supabase.from('rides').insert([newRide]).select();
-      if (!error && data) {
-         setRides([data[0], ...rides]);
-      } else {
+      
+      if (error) {
          console.error("Failed to save ride:", error);
+         alert("Database Error: " + error.message);
+         setStatusText("Save Failed");
+      } else if (data) {
+         setRides([data[0], ...rides]);
+         setStatusText("Ride Saved!");
       }
+    } else {
+       setStatusText("Canceled");
+       alert("Perjalanan terlalu singkat (kurang dari 3 detik). Rute diabaikan.");
     }
 
     setSpeed(0);
@@ -346,7 +354,7 @@ function App() {
                
                <div style={{ display: 'flex', gap: '8px' }}>
                  <button className="glass-button primary" style={{padding: '6px 12px', fontSize: '12px', background: '#4a90e2', color: '#fff'}} onClick={generateShareImage}>
-                   <Instagram size={14} style={{ marginRight: '4px' }} /> Share SG
+                   <Camera size={14} style={{ marginRight: '4px' }} /> Share SG
                  </button>
                  <button className="glass-button" style={{padding: '6px 12px', fontSize: '12px'}} onClick={() => {
                    setViewingRoute(null);
