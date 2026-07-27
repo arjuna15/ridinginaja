@@ -586,10 +586,10 @@ function App() {
           </div>
         )}
 
-        {/* MOKAT LOGO FOR SHARE SCREENSHOT */}
+        {/* CUSTOM LOGO FOR SHARE SCREENSHOT */}
         {shareMode && (
-           <div style={{ position: 'absolute', top: shareTheme==='MINIMAL' ? '160px' : '40px', left: '20px', zIndex: 60, color: shareTheme==='NEON' ? '#0f0' : (shareTheme==='MINIMAL' ? '#000' : '#fff'), fontSize: '28px', fontWeight: '900', textShadow: shareTheme==='MINIMAL' ? 'none' : '0 2px 10px rgba(0,0,0,0.8)' }}>
-              MOKAT<span style={{color: shareTheme==='NEON' ? '#fff' : '#4a90e2'}}>TOURING</span>
+           <div style={{ position: 'absolute', top: shareTheme==='MINIMAL' ? '160px' : '40px', left: '20px', zIndex: 60 }}>
+              <img src="/logo.png" alt="Mokat Touring Logo" style={{ height: '40px', width: 'auto', filter: shareTheme==='NEON' ? 'drop-shadow(0 0 10px #0f0)' : 'drop-shadow(0 2px 10px rgba(0,0,0,0.8))' }} />
            </div>
         )}
 
