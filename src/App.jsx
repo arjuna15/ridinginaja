@@ -591,11 +591,11 @@ function App() {
         {/* MAP LAYER */}
         {activeTab === 'RIDE' && session && (
           <div className="map-background" style={{ opacity: 1 }}>
-            <MapContainer ref={mapRef} center={currentPosition} zoom={15} zoomControl={false} style={{ height: '100%', width: '100%', backgroundColor: (shareTheme === 'NEON' || shareTheme === 'STRAVA_DARK') ? '#000' : '#050505' }}>
+            <MapContainer ref={mapRef} center={currentPosition} zoom={15} zoomControl={false} attributionControl={false} style={{ height: '100%', width: '100%', backgroundColor: (shareTheme === 'NEON' || shareTheme === 'STRAVA_DARK') ? '#000' : '#050505' }}>
               {!(shareMode && (shareTheme === 'NEON' || shareTheme === 'STRAVA_DARK')) && (
                 <TileLayer
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  attribution='&copy; OpenStreetMap'
+                  attribution=""
                   className="dark-map-tiles"
                 />
               )}
