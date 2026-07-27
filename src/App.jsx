@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Square, Map as MapIcon, User, Activity, Navigation, ChevronRight, Zap, Bike, LogOut, LocateFixed, Camera, LayoutTemplate, X, Download } from 'lucide-react';
+import { Play, Square, Map as MapIcon, User, Activity, Navigation, ChevronRight, Zap, Bike, LogOut, LocateFixed, Camera, LayoutTemplate, X, Download, Headset, Mic, MicOff, PhoneOff } from 'lucide-react';
 import { MapContainer, TileLayer, Polyline, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import html2canvas from 'html2canvas';
+import { Peer } from 'peerjs';
 import 'leaflet/dist/leaflet.css';
 import './index.css';
 import { supabase } from './supabaseClient';
@@ -88,6 +89,15 @@ function App() {
   const [showAddBike, setShowAddBike] = useState(false);
   const [newBike, setNewBike] = useState({ brand: '', name: '', type: '' });
   const [viewingRoute, setViewingRoute] = useState(null);
+
+  // Radio State
+  const [inRadio, setInRadio] = useState(false);
+  const [radioPeers, setRadioPeers] = useState([]);
+  const [isMuted, setIsMuted] = useState(false);
+  const localStreamRef = useRef(null);
+  const peerInstanceRef = useRef(null);
+  const radioChannelRef = useRef(null);
+  const callsRef = useRef({});
 
   const watchIdRef = useRef(null);
   const timerRef = useRef(null);
@@ -297,6 +307,115 @@ function App() {
     }
   };
 
+  const joinRadio = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      localStreamRef.current = stream;
+      
+      const peer = new Peer();
+      peerInstanceRef.current = peer;
+      
+      peer.on('open', (id) => {
+        setInRadio(true);
+        const channel = supabase.channel('radio_room', {
+          config: { presence: { key: session.user.id } }
+        });
+        radioChannelRef.current = channel;
+
+        channel.on('presence', { event: 'sync' }, () => {
+          const state = channel.presenceState();
+          for (const key in state) {
+            const presence = state[key][0];
+            if (presence.peerId && presence.peerId !== id) {
+              // Lowest peer ID initiates the call to avoid duplicate connections
+              if (!callsRef.current[presence.peerId] && id > presence.peerId) {
+                const call = peer.call(presence.peerId, stream);
+                setupCallEvents(call, presence.email);
+              }
+            }
+          }
+        });
+
+        channel.subscribe(async (status) => {
+          if (status === 'SUBSCRIBED') {
+            await channel.track({ user_id: session.user.id, peerId: id, email: session.user.email });
+          }
+        });
+      });
+
+      peer.on('call', (call) => {
+        call.answer(localStreamRef.current);
+        const state = radioChannelRef.current?.presenceState() || {};
+        let callerEmail = "Rider";
+        for (const key in state) {
+          if (state[key][0].peerId === call.peer) callerEmail = state[key][0].email;
+        }
+        setupCallEvents(call, callerEmail);
+      });
+
+    } catch (err) {
+      console.error(err);
+      alert("Gagal mengakses mikrofon. Pastikan izin mic diberikan di browser.");
+    }
+  };
+
+  const setupCallEvents = (call, callerEmail) => {
+    callsRef.current[call.peer] = call;
+    
+    call.on('stream', (remoteStream) => {
+      if (document.getElementById(`audio-${call.peer}`)) return; // Already exists
+      const audio = document.createElement('audio');
+      audio.srcObject = remoteStream;
+      audio.autoplay = true;
+      audio.id = `audio-${call.peer}`;
+      document.body.appendChild(audio);
+      
+      setRadioPeers(prev => {
+        if (prev.find(p => p.id === call.peer)) return prev;
+        return [...prev, { id: call.peer, email: callerEmail }];
+      });
+    });
+
+    call.on('close', () => {
+      const audio = document.getElementById(`audio-${call.peer}`);
+      if (audio) audio.remove();
+      delete callsRef.current[call.peer];
+      setRadioPeers(prev => prev.filter(p => p.id !== call.peer));
+    });
+  };
+
+  const leaveRadio = () => {
+    if (radioChannelRef.current) {
+      radioChannelRef.current.unsubscribe();
+      radioChannelRef.current = null;
+    }
+    if (peerInstanceRef.current) {
+      peerInstanceRef.current.destroy();
+      peerInstanceRef.current = null;
+    }
+    if (localStreamRef.current) {
+      localStreamRef.current.getTracks().forEach(t => t.stop());
+      localStreamRef.current = null;
+    }
+    Object.keys(callsRef.current).forEach(peerId => {
+      const audio = document.getElementById(`audio-${peerId}`);
+      if (audio) audio.remove();
+    });
+    callsRef.current = {};
+    setRadioPeers([]);
+    setInRadio(false);
+  };
+
+  const toggleMute = () => {
+    if (localStreamRef.current) {
+      const audioTrack = localStreamRef.current.getAudioTracks()[0];
+      if (audioTrack) {
+        audioTrack.enabled = !audioTrack.enabled;
+        setIsMuted(!audioTrack.enabled);
+      }
+    }
+  };
+
   if (!session) {
     return (
       <div className="app-container" style={{ justifyContent: 'center', alignItems: 'center', padding: '20px', backgroundImage: 'url(/map-bg.jpg)', backgroundSize: 'cover' }}>
@@ -469,6 +588,60 @@ function App() {
       );
     }
 
+    if (activeTab === 'RADIO') {
+      return (
+        <div className="glass-panel" style={{ flex: 1, padding: '24px', marginTop: '20px', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+             <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: inRadio ? 'rgba(74, 222, 128, 0.2)' : 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', boxShadow: inRadio ? '0 0 20px rgba(74, 222, 128, 0.4)' : 'none', transition: 'all 0.3s' }}>
+                <Headset size={40} color={inRadio ? '#4ade80' : '#888'} />
+             </div>
+             <h2 style={{ fontSize: '20px', fontWeight: 'bold' }}>Live Intercom</h2>
+             <p style={{ color: '#888', fontSize: '13px', marginTop: '4px' }}>Ngobrol bareng teman pas riding, jarak tak terbatas.</p>
+          </div>
+
+          {!inRadio ? (
+            <button className="glass-button primary" onClick={joinRadio} style={{ padding: '16px', fontSize: '16px', fontWeight: 'bold' }}>
+              Connect to Room
+            </button>
+          ) : (
+            <>
+              <div style={{ display: 'flex', gap: '12px', marginBottom: '32px' }}>
+                 <button className="glass-button" onClick={toggleMute} style={{ flex: 1, padding: '16px', background: isMuted ? 'rgba(239, 68, 68, 0.2)' : 'rgba(255,255,255,0.1)', color: isMuted ? '#ef4444' : '#fff' }}>
+                    {isMuted ? <MicOff size={24} style={{margin:'0 auto'}} /> : <Mic size={24} style={{margin:'0 auto'}} />}
+                 </button>
+                 <button className="glass-button" onClick={leaveRadio} style={{ flex: 1, padding: '16px', background: '#ef4444', color: '#fff', border: 'none' }}>
+                    <PhoneOff size={24} style={{margin:'0 auto'}} />
+                 </button>
+              </div>
+
+              <h3 style={{ fontSize: '14px', color: '#888', marginBottom: '12px' }}>Active Riders ({radioPeers.length + 1})</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                 <div style={{ background: 'rgba(74, 222, 128, 0.1)', border: '1px solid rgba(74, 222, 128, 0.3)', padding: '12px 16px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#4ade80', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#000', fontWeight: 'bold' }}>
+                       {session.user.email.substring(0,2).toUpperCase()}
+                    </div>
+                    <div>
+                       <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#4ade80' }}>You {isMuted && '(Muted)'}</div>
+                    </div>
+                 </div>
+
+                 {radioPeers.map(peer => (
+                   <div key={peer.id} style={{ background: 'rgba(255,255,255,0.05)', padding: '12px 16px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#4a90e2', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 'bold' }}>
+                         {peer.email.substring(0,2).toUpperCase()}
+                      </div>
+                      <div>
+                         <div style={{ fontSize: '14px', fontWeight: 'bold' }}>{peer.email.split('@')[0]}</div>
+                      </div>
+                   </div>
+                 ))}
+              </div>
+            </>
+          )}
+        </div>
+      );
+    }
+
     if (activeTab === 'STATS') {
       const totalKm = rides.reduce((acc, r) => acc + Number(r.distance), 0);
       const totalTime = rides.reduce((acc, r) => acc + Number(r.time), 0);
@@ -566,6 +739,7 @@ function App() {
   const navItems = [
     { id: 'RIDE', icon: Navigation, label: 'RIDE' },
     { id: 'ROUTES', icon: MapIcon, label: 'ROUTES' },
+    { id: 'RADIO', icon: Headset, label: 'RADIO' },
     { id: 'STATS', icon: Activity, label: 'STATS' },
     { id: 'GARAGE', icon: User, label: 'GARAGE' }
   ];
