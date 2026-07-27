@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Square, Map as MapIcon, User, Activity, Navigation, ChevronRight, Zap, Bike, LogOut, LocateFixed, Camera } from 'lucide-react';
+import { Play, Square, Map as MapIcon, User, Activity, Navigation, ChevronRight, Zap, Bike, LogOut, LocateFixed, Camera, LayoutTemplate, X, Download } from 'lucide-react';
 import { MapContainer, TileLayer, Polyline, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import html2canvas from 'html2canvas';
@@ -53,7 +53,7 @@ function formatTime(seconds) {
 
 function App() {
   const mapRef = useRef(null);
-  const shareContainerRef = useRef(null); // Reference for taking screenshot
+  const shareContainerRef = useRef(null); 
 
   // Auth State
   const [session, setSession] = useState(null);
@@ -69,7 +69,11 @@ function App() {
   const [distance, setDistance] = useState(0); 
   const [time, setTime] = useState(0); 
   const [statusText, setStatusText] = useState("Locating...");
-  const [isExporting, setIsExporting] = useState(false);
+  
+  // Share Export State
+  const [shareMode, setShareMode] = useState(false);
+  const [shareTheme, setShareTheme] = useState('CLASSIC'); // CLASSIC, NEON, MINIMAL
+  const [isCapturing, setIsCapturing] = useState(false);
   
   const [currentPosition, setCurrentPosition] = useState([-6.2088, 106.8456]); 
   const [routePath, setRoutePath] = useState([]); 
@@ -146,31 +150,29 @@ function App() {
 
   const generateShareImage = async () => {
     if (!shareContainerRef.current) return;
-    setIsExporting(true);
+    setIsCapturing(true);
     
-    // Give it a tiny delay to hide the UI elements cleanly before screenshot
     setTimeout(async () => {
       try {
         const canvas = await html2canvas(shareContainerRef.current, {
           useCORS: true,
           allowTaint: true,
-          backgroundColor: '#050505',
-          scale: 2 // High resolution
+          backgroundColor: shareTheme === 'NEON' ? '#000000' : '#050505',
+          scale: 2 
         });
         
         const image = canvas.toDataURL("image/png");
         
-        // Create an invisible link to trigger download
         const a = document.createElement('a');
         a.href = image;
-        a.download = `mokat-ride-${new Date().getTime()}.png`;
+        a.download = `mokat-story-${shareTheme.toLowerCase()}-${new Date().getTime()}.png`;
         a.click();
         
       } catch (err) {
         console.error("Failed to generate image:", err);
-        alert("Gagal men-generate gambar SG. Pastikan peta sudah ter-load sepenuhnya.");
+        alert("Gagal memproses gambar. Pastikan peta sudah selesai loading.");
       } finally {
-        setIsExporting(false);
+        setIsCapturing(false);
       }
     }, 500);
   };
@@ -318,19 +320,46 @@ function App() {
     );
   }
 
+  // ==== SHARE THEME STYLES ====
+  const getShareStyles = () => {
+    if (shareTheme === 'CLASSIC') {
+      return {
+        wrapper: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: '40px 20px', background: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.8) 50%, rgba(0,0,0,0) 100%)', zIndex: 50 },
+        title: { fontSize: '28px', fontWeight: 'bold', color: '#fff', marginBottom: '4px' },
+        date: { fontSize: '14px', color: '#aaa', marginBottom: '24px' },
+        statRow: { display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.2)', paddingTop: '16px' },
+        statVal: { fontSize: '24px', fontWeight: 'bold', color: '#fff' },
+        statLbl: { fontSize: '12px', color: '#888', textTransform: 'uppercase' }
+      };
+    }
+    if (shareTheme === 'NEON') {
+      return {
+        wrapper: { position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, background: '#000', padding: '40px 20px', zIndex: 50, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' },
+        title: { fontSize: '32px', fontWeight: '900', color: '#0f0', textShadow: '0 0 10px #0f0', marginBottom: '4px' },
+        date: { fontSize: '14px', color: '#0a0', marginBottom: '40px' },
+        statRow: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', background: 'rgba(0,255,0,0.05)', padding: '20px', borderRadius: '12px', border: '1px solid #0f0' },
+        statVal: { fontSize: '22px', fontWeight: 'bold', color: '#0f0', textShadow: '0 0 5px #0f0' },
+        statLbl: { fontSize: '11px', color: '#0a0', textTransform: 'uppercase' }
+      };
+    }
+    if (shareTheme === 'MINIMAL') {
+      return {
+        wrapper: { position: 'absolute', top: '40px', left: '20px', right: '20px', background: 'rgba(255,255,255,0.95)', padding: '24px', borderRadius: '24px', zIndex: 50, boxShadow: '0 20px 40px rgba(0,0,0,0.5)' },
+        title: { fontSize: '24px', fontWeight: '800', color: '#000', marginBottom: '4px' },
+        date: { fontSize: '12px', color: '#666', marginBottom: '20px' },
+        statRow: { display: 'flex', justifyContent: 'space-between' },
+        statVal: { fontSize: '20px', fontWeight: '800', color: '#000' },
+        statLbl: { fontSize: '10px', color: '#888', textTransform: 'uppercase', fontWeight: '600' }
+      };
+    }
+  };
+
   const renderContent = () => {
     if (activeTab === 'RIDE') {
       return (
         <>
-          {/* Watermark Logo (Only visible during export) */}
-          {isExporting && (
-             <div style={{ position: 'absolute', top: '40px', left: '20px', zIndex: 50, color: '#fff', fontSize: '24px', fontWeight: 'bold', textShadow: '0 2px 10px rgba(0,0,0,0.8)' }}>
-                MOKAT<span style={{color: '#4a90e2'}}>TOURING</span>
-             </div>
-          )}
-
-          {/* VIEWING ROUTE HEADER - Move to TOP for visibility */}
-          {viewingRoute && !isExporting && (
+          {/* VIEWING ROUTE HEADER */}
+          {viewingRoute && !shareMode && (
              <div className="glass-panel" style={{ padding: '12px', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                <div>
                  <p style={{fontSize: '12px', color: '#888'}}>Viewing Saved Route</p>
@@ -338,8 +367,8 @@ function App() {
                </div>
                
                <div style={{ display: 'flex', gap: '8px' }}>
-                 <button className="glass-button primary" style={{padding: '6px 12px', fontSize: '12px', background: '#4a90e2', color: '#fff'}} onClick={generateShareImage}>
-                   <Camera size={14} style={{ marginRight: '4px' }} /> Share SG
+                 <button className="glass-button primary" style={{padding: '6px 12px', fontSize: '12px', background: '#4a90e2', color: '#fff'}} onClick={() => setShareMode(true)}>
+                   <LayoutTemplate size={14} style={{ marginRight: '4px' }} /> Share SG
                  </button>
                  <button className="glass-button" style={{padding: '6px 12px', fontSize: '12px'}} onClick={() => {
                    setViewingRoute(null);
@@ -352,8 +381,8 @@ function App() {
 
           <div className="dashboard-spacer"></div>
 
-          {/* LOCATE BUTTON - Hide during export */}
-          {!viewingRoute && !isExporting && (
+          {/* LOCATE BUTTON - Hide during export & share mode */}
+          {!viewingRoute && !shareMode && (
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
               <button 
                 className="glass-button" 
@@ -365,26 +394,25 @@ function App() {
             </div>
           )}
 
-          {/* STATS PANEL */}
-          <div className="stats-panel glass-panel" style={{ 
-            marginBottom: isExporting ? '40px' : '24px', 
-            background: isExporting ? 'rgba(0,0,0,0.8)' : undefined // Darker background for export readability
-          }}>
-            <div className="stat-item">
-              <div className="stat-value">{viewingRoute ? Math.round(viewingRoute.avg_speed) : speed}<span>km/h</span></div>
-              <div className="stat-label">{viewingRoute ? 'Avg Spd' : 'Speed'}</div>
+          {/* STATS PANEL - Hide during share mode (we use custom overlay) */}
+          {!shareMode && (
+            <div className="stats-panel glass-panel">
+              <div className="stat-item">
+                <div className="stat-value">{viewingRoute ? Math.round(viewingRoute.avg_speed) : speed}<span>km/h</span></div>
+                <div className="stat-label">{viewingRoute ? 'Avg Spd' : 'Speed'}</div>
+              </div>
+              <div className="stat-item">
+                <div className="stat-value">{(viewingRoute ? viewingRoute.distance : distance).toFixed(1)}<span>km</span></div>
+                <div className="stat-label">Distance</div>
+              </div>
+              <div className="stat-item">
+                <div className="stat-value">{formatTime(viewingRoute ? viewingRoute.time : time)}</div>
+                <div className="stat-label">Time</div>
+              </div>
             </div>
-            <div className="stat-item">
-              <div className="stat-value">{(viewingRoute ? viewingRoute.distance : distance).toFixed(1)}<span>km</span></div>
-              <div className="stat-label">Distance</div>
-            </div>
-            <div className="stat-item">
-              <div className="stat-value">{formatTime(viewingRoute ? viewingRoute.time : time)}</div>
-              <div className="stat-label">Time</div>
-            </div>
-          </div>
+          )}
 
-          {!viewingRoute && !isExporting && (
+          {!viewingRoute && !shareMode && (
             <div className="action-area">
               <div className="btn-start" onClick={isTracking ? stopTracking : startTracking}>
                 <div className="btn-inner" style={{ color: isTracking ? '#ef4444' : '#000' }}>
@@ -529,28 +557,73 @@ function App() {
   ];
 
   return (
-    <div className="app-container" ref={shareContainerRef}>
+    <div className="app-container" style={{ background: shareTheme === 'NEON' && shareMode ? '#000' : '' }}>
       
-      {/* Map is only visible on the RIDE tab */}
-      {activeTab === 'RIDE' && session && (
-        <div className="map-background">
-          <MapContainer ref={mapRef} center={currentPosition} zoom={15} zoomControl={false} style={{ height: '100%', width: '100%', backgroundColor: '#050505' }}>
-            <TileLayer
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              attribution='&copy; OpenStreetMap'
-              className="dark-map-tiles"
-            />
-            {viewingRoute && viewingRoute.route_path && <MapBoundsFitter path={viewingRoute.route_path} />}
-            <Polyline positions={routePath} color="#4a90e2" weight={4} opacity={0.8} />
-            {!viewingRoute && <Marker position={currentPosition} icon={bikeIcon} />}
-          </MapContainer>
-        </div>
-      )}
-
-      <div className="content-layer">
+      {/* 
+        This is the DOM node we will screenshot. 
+        It contains only the map, the route, and the strictly-positioned overlay. 
+      */}
+      <div ref={shareContainerRef} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, overflow: 'hidden' }}>
         
-        {/* Hide Top Nav during Export for cleaner screenshot */}
-        {!isExporting && (
+        {/* MAP LAYER */}
+        {activeTab === 'RIDE' && session && (
+          <div className="map-background" style={{ opacity: (shareMode && shareTheme === 'NEON') ? 0 : 1 }}>
+            <MapContainer ref={mapRef} center={currentPosition} zoom={15} zoomControl={false} style={{ height: '100%', width: '100%', backgroundColor: '#050505' }}>
+              <TileLayer
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                attribution='&copy; OpenStreetMap'
+                className="dark-map-tiles"
+              />
+              {viewingRoute && viewingRoute.route_path && <MapBoundsFitter path={viewingRoute.route_path} />}
+              <Polyline 
+                positions={routePath} 
+                color={shareMode && shareTheme === 'NEON' ? '#0f0' : '#4a90e2'} 
+                weight={shareMode && shareTheme === 'NEON' ? 6 : 4} 
+                opacity={1} 
+              />
+              {!viewingRoute && <Marker position={currentPosition} icon={bikeIcon} />}
+            </MapContainer>
+          </div>
+        )}
+
+        {/* MOKAT LOGO FOR SHARE SCREENSHOT */}
+        {shareMode && (
+           <div style={{ position: 'absolute', top: shareTheme==='MINIMAL' ? '160px' : '40px', left: '20px', zIndex: 60, color: shareTheme==='NEON' ? '#0f0' : (shareTheme==='MINIMAL' ? '#000' : '#fff'), fontSize: '28px', fontWeight: '900', textShadow: shareTheme==='MINIMAL' ? 'none' : '0 2px 10px rgba(0,0,0,0.8)' }}>
+              MOKAT<span style={{color: shareTheme==='NEON' ? '#fff' : '#4a90e2'}}>TOURING</span>
+           </div>
+        )}
+
+        {/* STRICT STATS OVERLAY FOR SHARE */}
+        {shareMode && viewingRoute && (
+          <div style={getShareStyles().wrapper}>
+             <div style={getShareStyles().title}>Afternoon Ride</div>
+             <div style={getShareStyles().date}>{new Date(viewingRoute.created_at).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
+             
+             <div style={getShareStyles().statRow}>
+                <div>
+                   <div style={getShareStyles().statVal}>{Number(viewingRoute.distance).toFixed(1)} km</div>
+                   <div style={getShareStyles().statLbl}>Distance</div>
+                </div>
+                <div>
+                   <div style={getShareStyles().statVal}>{Math.round(viewingRoute.avg_speed)} km/h</div>
+                   <div style={getShareStyles().statLbl}>Avg Speed</div>
+                </div>
+                <div>
+                   <div style={getShareStyles().statVal}>{formatTime(viewingRoute.time)}</div>
+                   <div style={getShareStyles().statLbl}>Time</div>
+                </div>
+             </div>
+          </div>
+        )}
+
+      </div> {/* END SHARE CONTAINER */}
+
+
+      {/* INTERACTIVE UI LAYER (Will NOT be captured by html2canvas) */}
+      <div className="content-layer" style={{ pointerEvents: shareMode ? 'none' : 'none' }}>
+        
+        {/* Hide Top Nav during Share Mode */}
+        {!shareMode && (
           <header className="top-nav">
             <div className="profile-pic" />
             <div className="status-badge">
@@ -565,8 +638,8 @@ function App() {
 
         {renderContent()}
 
-        {/* Hide Bottom Nav during Export */}
-        {!isExporting && (
+        {/* Hide Bottom Nav during Share Mode */}
+        {!shareMode && (
           <nav className="bottom-nav">
             {navItems.map((item) => (
               <div 
@@ -581,6 +654,29 @@ function App() {
           </nav>
         )}
       </div>
+
+      {/* SHARE EDITOR CONTROLS (Appears above everything when shareMode is active) */}
+      {shareMode && (
+        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: '#111', zIndex: 100, padding: '20px', borderTopLeftRadius: '24px', borderTopRightRadius: '24px', pointerEvents: 'auto' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+             <h3 style={{ fontSize: '16px', fontWeight: 'bold' }}>Style Editor</h3>
+             <button onClick={() => setShareMode(false)} style={{ background: 'transparent', border: 'none', color: '#fff', padding: '4px' }}>
+               <X size={24} />
+             </button>
+          </div>
+          
+          <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '20px' }}>
+             <button onClick={() => setShareTheme('CLASSIC')} className="glass-button" style={{ flex: 1, padding: '12px', minWidth: '100px', background: shareTheme === 'CLASSIC' ? '#4a90e2' : 'rgba(255,255,255,0.1)' }}>Classic</button>
+             <button onClick={() => setShareTheme('NEON')} className="glass-button" style={{ flex: 1, padding: '12px', minWidth: '100px', background: shareTheme === 'NEON' ? '#4a90e2' : 'rgba(255,255,255,0.1)' }}>Neon</button>
+             <button onClick={() => setShareTheme('MINIMAL')} className="glass-button" style={{ flex: 1, padding: '12px', minWidth: '100px', background: shareTheme === 'MINIMAL' ? '#4a90e2' : 'rgba(255,255,255,0.1)' }}>Minimal</button>
+          </div>
+
+          <button onClick={generateShareImage} className="glass-button primary" style={{ width: '100%', padding: '16px', fontSize: '16px', fontWeight: 'bold', display: 'flex', justifyContent: 'center', gap: '8px' }}>
+             {isCapturing ? 'Generating Image...' : <><Download size={20} /> Download SG</>}
+          </button>
+        </div>
+      )}
+
     </div>
   );
 }
