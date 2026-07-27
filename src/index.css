@@ -116,7 +116,6 @@ body {
   background: #050505;
 }
 
-/* Magic CSS trick to turn standard map into Dark Mode! */
 .dark-map-tiles {
   filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
   -webkit-filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
@@ -142,9 +141,17 @@ body {
   height: 100%;
   padding: 20px;
   overflow-y: auto;
+  /* Allow map to be dragged */
+  pointer-events: none; 
 }
+
 .content-layer::-webkit-scrollbar {
   display: none;
+}
+
+/* Make UI elements clickable again */
+.content-layer > * {
+  pointer-events: auto;
 }
 
 /* Top Navigation */
@@ -203,6 +210,8 @@ body {
 /* Main Dashboard Space */
 .dashboard-spacer {
   flex: 1;
+  /* Very important so you can drag map through the spacer! */
+  pointer-events: none !important;
 }
 
 /* Quick Stats Floating Panel */

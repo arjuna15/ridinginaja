@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Square, Map as MapIcon, User, Activity, Settings, Navigation, ChevronRight, Zap, Bike, LogOut } from 'lucide-react';
+import { Play, Square, Map as MapIcon, User, Activity, Settings, Navigation, ChevronRight, Zap, Bike, LogOut, LocateFixed } from 'lucide-react';
 import { MapContainer, TileLayer, Polyline, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -19,16 +19,6 @@ const bikeIcon = L.divIcon({
   iconSize: [16, 16],
   iconAnchor: [8, 8]
 });
-
-function MapCenterer({ position, isTracking }) {
-  const map = useMap();
-  useEffect(() => {
-    if (position && isTracking) {
-      map.flyTo(position, 16, { animate: true, duration: 1 });
-    }
-  }, [position, map, isTracking]);
-  return null;
-}
 
 function MapBoundsFitter({ path }) {
   const map = useMap();
@@ -61,6 +51,8 @@ function formatTime(seconds) {
 }
 
 function App() {
+  const mapRef = useRef(null);
+
   // Auth State
   const [session, setSession] = useState(null);
   const [authEmail, setAuthEmail] = useState('');
@@ -102,12 +94,15 @@ function App() {
   useEffect(() => {
     if (session?.user) {
       fetchCloudData();
-      // Initialize GPS only when logged in
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           const { latitude, longitude } = pos.coords;
           setCurrentPosition([latitude, longitude]);
           setStatusText("GPS Ready");
+          // Initial center
+          if (mapRef.current) {
+            mapRef.current.flyTo([latitude, longitude], 16);
+          }
         },
         () => setStatusText("GPS Denied"),
         { enableHighAccuracy: true }
@@ -141,6 +136,12 @@ function App() {
     await supabase.auth.signOut();
   };
 
+  const handleCenterMap = () => {
+    if (mapRef.current && currentPosition) {
+      mapRef.current.flyTo(currentPosition, 16, { animate: true, duration: 1 });
+    }
+  };
+
   const startTracking = () => {
     if (!navigator.geolocation) {
       alert("Geolocation tidak didukung");
@@ -152,6 +153,9 @@ function App() {
     setRoutePath([]);
     setDistance(0);
     setTime(0);
+
+    // Center immediately on start
+    handleCenterMap();
 
     timerRef.current = setInterval(() => {
       setTime(prev => prev + 1);
@@ -258,7 +262,7 @@ function App() {
             <form onSubmit={handleAuth} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                <input className="glass-input" type="email" placeholder="Email" value={authEmail} onChange={e => setAuthEmail(e.target.value)} required />
                <input className="glass-input" type="password" placeholder="Password" value={authPassword} onChange={e => setAuthPassword(e.target.value)} required />
-               <button className="glass-button primary" type="submit" style={{ padding: '12px' }} disabled={authLoading}>
+               <button className="glass-button primary" type="submit" style={{ padding: '12px' }}>
                   {authLoading ? 'Loading...' : (isLoginMode ? 'Sign In' : 'Sign Up')}
                </button>
             </form>
@@ -280,6 +284,19 @@ function App() {
         <>
           <div className="dashboard-spacer"></div>
           
+          {/* LOCATE BUTTON */}
+          {!viewingRoute && (
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
+              <button 
+                className="glass-button" 
+                onClick={handleCenterMap}
+                style={{ width: '44px', height: '44px', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.2)' }}
+              >
+                <LocateFixed size={20} color="#4a90e2" />
+              </button>
+            </div>
+          )}
+
           {viewingRoute && (
              <div className="glass-panel" style={{ padding: '12px', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                <div>
@@ -289,6 +306,7 @@ function App() {
                <button className="glass-button" style={{padding: '6px 12px', fontSize: '12px'}} onClick={() => {
                  setViewingRoute(null);
                  setRoutePath([]);
+                 handleCenterMap();
                }}>Close</button>
              </div>
           )}
@@ -458,18 +476,14 @@ function App() {
       {/* Map is only visible on the RIDE tab */}
       {activeTab === 'RIDE' && session && (
         <div className="map-background">
-          <MapContainer center={currentPosition} zoom={15} zoomControl={false} style={{ height: '100%', width: '100%', backgroundColor: '#050505' }}>
+          <MapContainer ref={mapRef} center={currentPosition} zoom={15} zoomControl={false} style={{ height: '100%', width: '100%', backgroundColor: '#050505' }}>
             <TileLayer
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               attribution='&copy; OpenStreetMap'
               className="dark-map-tiles"
             />
-            {!viewingRoute && <MapCenterer position={currentPosition} isTracking={isTracking} />}
             {viewingRoute && viewingRoute.route_path && <MapBoundsFitter path={viewingRoute.route_path} />}
-            
             <Polyline positions={routePath} color="#4a90e2" weight={4} opacity={0.8} />
-            
-            {/* Show user marker only if not viewing a past route */}
             {!viewingRoute && <Marker position={currentPosition} icon={bikeIcon} />}
           </MapContainer>
         </div>
