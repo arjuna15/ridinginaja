@@ -21,14 +21,18 @@ const bikeIcon = L.divIcon({
   iconAnchor: [8, 8]
 });
 
-function MapBoundsFitter({ path }) {
+function MapBoundsFitter({ path, isShareMode }) {
   const map = useMap();
   useEffect(() => {
     if (path && path.length > 0) {
       const bounds = L.latLngBounds(path);
-      map.fitBounds(bounds, { padding: [40, 40] });
+      // Auto-center the route perfectly, especially when entering share mode
+      map.fitBounds(bounds, { 
+        paddingTopLeft: [40, 40],
+        paddingBottomRight: [40, 160] // Extra padding at bottom to account for stats UI
+      });
     }
-  }, [path, map]);
+  }, [path, map, isShareMode]);
   return null;
 }
 
@@ -584,7 +588,8 @@ function App() {
           background: (shareTheme === 'NEON' || shareTheme === 'STRAVA_DARK') ? '#000' : 'transparent',
           transform: (shareMode && !isCapturing) ? 'scale(0.8) translateY(-5%)' : 'none',
           transformOrigin: 'top center',
-          transition: 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+          transition: 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+          pointerEvents: shareMode ? 'none' : 'auto' // Prevent map dragging during share preview
         }}
       >
         
@@ -599,7 +604,7 @@ function App() {
                   className="dark-map-tiles"
                 />
               )}
-              {viewingRoute && viewingRoute.route_path && <MapBoundsFitter path={viewingRoute.route_path} />}
+              {viewingRoute && viewingRoute.route_path && <MapBoundsFitter path={viewingRoute.route_path} isShareMode={shareMode} />}
               <Polyline 
                 positions={routePath} 
                 color={shareMode && shareTheme === 'NEON' ? '#0f0' : (shareMode && shareTheme === 'STRAVA_DARK' ? '#fc4c02' : '#4a90e2')} 
