@@ -418,11 +418,11 @@ function App() {
 
   if (!session) {
     return (
-      <div className="app-container" style={{ justifyContent: 'center', alignItems: 'center', padding: '20px', backgroundImage: 'url(/map-bg.jpg)', backgroundSize: 'cover' }}>
-         <div className="app-container-overlay" style={{position:'absolute', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.8)', zIndex:0}}></div>
-         <div className="glass-panel" style={{ padding: '32px', width: '100%', maxWidth: '400px', zIndex: 1 }}>
-            <h1 style={{ textAlign: 'center', marginBottom: '8px', fontSize: '24px', fontWeight: 'bold' }}>Mokat Touring</h1>
-            <p style={{ textAlign: 'center', color: '#888', marginBottom: '32px', fontSize: '14px' }}>Log in to access your cloud garage & routes.</p>
+      <div className="app-container auth-bg" style={{ justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
+         <div className="app-container-overlay" style={{position:'absolute', top:0, left:0, right:0, bottom:0, background:'linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, rgba(5,5,5,1) 100%)', zIndex:0}}></div>
+         <div className="glass-panel" style={{ padding: '40px 32px', width: '100%', maxWidth: '400px', zIndex: 1, borderRadius: '32px' }}>
+            <h1 style={{ textAlign: 'center', marginBottom: '12px', fontSize: '28px', fontWeight: '900', letterSpacing: '-1px' }}>Mokat Touring</h1>
+            <p style={{ textAlign: 'center', color: '#aaa', marginBottom: '40px', fontSize: '15px' }}>Log in to access your cloud garage & routes.</p>
             
             <form onSubmit={handleAuth} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                <input className="glass-input" type="email" placeholder="Email" value={authEmail} onChange={e => setAuthEmail(e.target.value)} required />
@@ -569,16 +569,17 @@ function App() {
             rides.map(ride => (
               <div 
                 key={ride.id} 
+                className="glass-card"
                 onClick={() => {
                   setViewingRoute(ride);
                   setRoutePath(ride.route_path || []);
                   setActiveTab('RIDE');
                 }}
-                style={{ background: 'rgba(255,255,255,0.05)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)', cursor: 'pointer' }}
+                style={{ cursor: 'pointer' }}
               >
-                <h3 style={{ fontSize: '15px', marginBottom: '4px', color: '#fff' }}>Ride on {new Date(ride.created_at).toLocaleDateString()}</h3>
-                <p style={{ fontSize: '12px', color: '#888', marginBottom: '12px' }}>{Number(ride.distance).toFixed(2)} km • {formatTime(ride.time)}</p>
-                <div style={{ display: 'flex', alignItems: 'center', color: '#4a90e2', fontSize: '13px', fontWeight: '500' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '6px', color: '#fff' }}>Ride on {new Date(ride.created_at).toLocaleDateString()}</h3>
+                <p style={{ fontSize: '13px', color: '#888', marginBottom: '16px', fontWeight: '500' }}>{Number(ride.distance).toFixed(2)} km • {formatTime(ride.time)}</p>
+                <div style={{ display: 'flex', alignItems: 'center', color: '#4a90e2', fontSize: '13px', fontWeight: '700' }}>
                   View on Map <ChevronRight size={16} />
                 </div>
               </div>
@@ -648,23 +649,23 @@ function App() {
       
       return (
         <div className="glass-panel" style={{ flex: 1, padding: '24px', marginTop: '20px' }}>
-          <h2 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '24px' }}>My Statistics</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
-            <div style={{ background: 'rgba(255,255,255,0.05)', padding: '20px', borderRadius: '16px', textAlign: 'center' }}>
-              <Zap size={24} color="#f59e0b" style={{ margin: '0 auto 8px' }} />
-              <div style={{ fontSize: '24px', fontWeight: '700' }}>{totalKm.toFixed(1)}</div>
-              <div style={{ fontSize: '11px', color: '#888', textTransform: 'uppercase', marginTop: '4px' }}>Total KM</div>
+          <h2 style={{ fontSize: '20px', fontWeight: '800', marginBottom: '24px' }}>My Statistics</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+            <div className="glass-card" style={{ textAlign: 'center' }}>
+              <Zap size={28} color="#f59e0b" style={{ margin: '0 auto 12px' }} />
+              <div style={{ fontSize: '28px', fontWeight: '900', letterSpacing: '-1px' }}>{totalKm.toFixed(1)}</div>
+              <div style={{ fontSize: '11px', color: '#888', textTransform: 'uppercase', marginTop: '4px', fontWeight: '700' }}>Total KM</div>
             </div>
-            <div style={{ background: 'rgba(255,255,255,0.05)', padding: '20px', borderRadius: '16px', textAlign: 'center' }}>
-              <Activity size={24} color="#10b981" style={{ margin: '0 auto 8px' }} />
-              <div style={{ fontSize: '24px', fontWeight: '700' }}>{rides.length}</div>
-              <div style={{ fontSize: '11px', color: '#888', textTransform: 'uppercase', marginTop: '4px' }}>Total Rides</div>
+            <div className="glass-card" style={{ textAlign: 'center' }}>
+              <Activity size={28} color="#10b981" style={{ margin: '0 auto 12px' }} />
+              <div style={{ fontSize: '28px', fontWeight: '900', letterSpacing: '-1px' }}>{rides.length}</div>
+              <div style={{ fontSize: '11px', color: '#888', textTransform: 'uppercase', marginTop: '4px', fontWeight: '700' }}>Total Rides</div>
             </div>
           </div>
           
-          <div style={{ background: 'rgba(255,255,255,0.05)', padding: '20px', borderRadius: '16px', textAlign: 'center' }}>
-             <div style={{ fontSize: '24px', fontWeight: '700' }}>{formatTime(totalTime)}</div>
-             <div style={{ fontSize: '11px', color: '#888', textTransform: 'uppercase', marginTop: '4px' }}>Time in Saddle</div>
+          <div className="glass-card" style={{ textAlign: 'center' }}>
+             <div style={{ fontSize: '32px', fontWeight: '900', letterSpacing: '-1px' }}>{formatTime(totalTime)}</div>
+             <div style={{ fontSize: '12px', color: '#888', textTransform: 'uppercase', marginTop: '4px', fontWeight: '700' }}>Time in Saddle</div>
           </div>
         </div>
       );
@@ -717,13 +718,13 @@ function App() {
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   {bikes.map(bike => (
-                    <div key={bike.id} style={{ background: 'rgba(255,255,255,0.05)', padding: '16px', borderRadius: '16px', display: 'flex', alignItems: 'center', gap: '16px' }}>
-                      <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <Bike size={20} color="#4a90e2" />
+                    <div key={bike.id} className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                      <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Bike size={24} color="#4a90e2" />
                       </div>
                       <div>
-                        <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#fff' }}>{bike.brand} {bike.name}</h3>
-                        <p style={{ fontSize: '12px', color: '#888' }}>{bike.type || 'Standard'}</p>
+                        <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#fff' }}>{bike.brand} {bike.name}</h3>
+                        <p style={{ fontSize: '13px', color: '#888', fontWeight: '500' }}>{bike.type || 'Standard'}</p>
                       </div>
                     </div>
                   ))}
@@ -745,7 +746,7 @@ function App() {
   ];
 
   return (
-    <div className="app-container" style={{ background: shareTheme === 'NEON' && shareMode ? '#000' : '' }}>
+    <div className="app-container auth-bg" style={{ background: shareTheme === 'NEON' && shareMode ? '#000' : '' }}>
       
       {/* 
         This is the DOM node we will screenshot. 
@@ -831,7 +832,7 @@ function App() {
           <header className="top-nav">
             <div className="profile-pic" />
             <div className="status-badge">
-              <span className="dot" style={{ backgroundColor: isTracking ? '#ef4444' : '#4ade80', boxShadow: isTracking ? '0 0 8px #ef4444' : '0 0 8px #4ade80' }}></span>
+              <span className={`dot ${isTracking ? 'recording' : 'ready'}`}></span>
               {statusText}
             </div>
             <button className="icon-btn" onClick={handleSignOut} title="Sign Out">
