@@ -527,33 +527,33 @@ function App() {
             </div>
           )}
 
-          {/* STATS PANEL - Hide during share mode (we use custom overlay) */}
-          {!shareMode && (
-            <div className="stats-panel glass-panel">
-              <div className="stat-item">
-                <div className="stat-value">{viewingRoute ? Math.round(viewingRoute.avg_speed) : speed}<span>km/h</span></div>
-                <div className="stat-label">{viewingRoute ? 'Avg Spd' : 'Speed'}</div>
-              </div>
-              <div className="stat-item">
-                <div className="stat-value">{(viewingRoute ? viewingRoute.distance : distance).toFixed(1)}<span>km</span></div>
-                <div className="stat-label">Distance</div>
-              </div>
-              <div className="stat-item">
-                <div className="stat-value">{formatTime(viewingRoute ? viewingRoute.time : time)}</div>
-                <div className="stat-label">Time</div>
+        {!viewingRoute && !shareMode && (
+          <div className="action-area">
+            <div className={`btn-start ${isTracking ? 'recording' : ''}`} onClick={isTracking ? stopTracking : startTracking}>
+              <div className="btn-inner" style={{ color: isTracking ? '#ef4444' : '#000' }}>
+                {isTracking ? <Square size={28} fill="currentColor" /> : <Play size={32} fill="currentColor" style={{ marginLeft: '4px' }} />}
               </div>
             </div>
-          )}
+          </div>
+        )}
 
-          {!viewingRoute && !shareMode && (
-            <div className="action-area">
-              <div className="btn-start" onClick={isTracking ? stopTracking : startTracking}>
-                <div className="btn-inner" style={{ color: isTracking ? '#ef4444' : '#000' }}>
-                  {isTracking ? <Square size={24} fill="currentColor" /> : <Play size={28} fill="currentColor" style={{ marginLeft: '4px' }} />}
-                </div>
-              </div>
+        {/* STATS PANEL - Hide during share mode (we use custom overlay) */}
+        {!shareMode && (
+          <div className="stats-panel glass-panel">
+            <div className="stat-item">
+              <div className="stat-value">{viewingRoute ? Math.round(viewingRoute.avg_speed) : speed}<span>km/h</span></div>
+              <div className="stat-label">{viewingRoute ? 'Avg Spd' : 'Speed'}</div>
             </div>
-          )}
+            <div className="stat-item">
+              <div className="stat-value">{(viewingRoute ? viewingRoute.distance : distance).toFixed(1)}<span>km</span></div>
+              <div className="stat-label">Distance</div>
+            </div>
+            <div className="stat-item">
+              <div className="stat-value">{formatTime(viewingRoute ? viewingRoute.time : time)}</div>
+              <div className="stat-label">Time</div>
+            </div>
+          </div>
+        )}
         </>
       );
     }
