@@ -322,8 +322,6 @@ function App() {
     if (activeTab === 'RIDE') {
       return (
         <>
-          <div className="dashboard-spacer"></div>
-          
           {/* Watermark Logo (Only visible during export) */}
           {isExporting && (
              <div style={{ position: 'absolute', top: '40px', left: '20px', zIndex: 50, color: '#fff', fontSize: '24px', fontWeight: 'bold', textShadow: '0 2px 10px rgba(0,0,0,0.8)' }}>
@@ -331,20 +329,7 @@ function App() {
              </div>
           )}
 
-          {/* LOCATE BUTTON - Hide during export */}
-          {!viewingRoute && !isExporting && (
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
-              <button 
-                className="glass-button" 
-                onClick={handleCenterMap}
-                style={{ width: '44px', height: '44px', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.2)' }}
-              >
-                <LocateFixed size={20} color="#4a90e2" />
-              </button>
-            </div>
-          )}
-
-          {/* VIEWING ROUTE HEADER - Hide during export */}
+          {/* VIEWING ROUTE HEADER - Move to TOP for visibility */}
           {viewingRoute && !isExporting && (
              <div className="glass-panel" style={{ padding: '12px', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                <div>
@@ -363,6 +348,21 @@ function App() {
                  }}>Close</button>
                </div>
              </div>
+          )}
+
+          <div className="dashboard-spacer"></div>
+
+          {/* LOCATE BUTTON - Hide during export */}
+          {!viewingRoute && !isExporting && (
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
+              <button 
+                className="glass-button" 
+                onClick={handleCenterMap}
+                style={{ width: '44px', height: '44px', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.2)' }}
+              >
+                <LocateFixed size={20} color="#4a90e2" />
+              </button>
+            </div>
           )}
 
           {/* STATS PANEL */}
