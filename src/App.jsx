@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Square, Map as MapIcon, User, Activity, Settings, Navigation, ChevronRight, Zap, Bike, LogOut, LocateFixed } from 'lucide-react';
+import { Play, Square, Map as MapIcon, User, Activity, Settings, Navigation, ChevronRight, Zap, Bike, LogOut, LocateFixed, Instagram, Download } from 'lucide-react';
 import { MapContainer, TileLayer, Polyline, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
+import html2canvas from 'html2canvas';
 import 'leaflet/dist/leaflet.css';
 import './index.css';
 import { supabase } from './supabaseClient';
@@ -25,7 +26,7 @@ function MapBoundsFitter({ path }) {
   useEffect(() => {
     if (path && path.length > 0) {
       const bounds = L.latLngBounds(path);
-      map.fitBounds(bounds, { padding: [20, 20] });
+      map.fitBounds(bounds, { padding: [40, 40] });
     }
   }, [path, map]);
   return null;
@@ -52,6 +53,7 @@ function formatTime(seconds) {
 
 function App() {
   const mapRef = useRef(null);
+  const shareContainerRef = useRef(null); // Reference for taking screenshot
 
   // Auth State
   const [session, setSession] = useState(null);
@@ -67,6 +69,7 @@ function App() {
   const [distance, setDistance] = useState(0); 
   const [time, setTime] = useState(0); 
   const [statusText, setStatusText] = useState("Locating...");
+  const [isExporting, setIsExporting] = useState(false);
   
   const [currentPosition, setCurrentPosition] = useState([-6.2088, 106.8456]); 
   const [routePath, setRoutePath] = useState([]); 
@@ -99,7 +102,6 @@ function App() {
           const { latitude, longitude } = pos.coords;
           setCurrentPosition([latitude, longitude]);
           setStatusText("GPS Ready");
-          // Initial center
           if (mapRef.current) {
             mapRef.current.flyTo([latitude, longitude], 16);
           }
@@ -142,6 +144,37 @@ function App() {
     }
   };
 
+  const generateShareImage = async () => {
+    if (!shareContainerRef.current) return;
+    setIsExporting(true);
+    
+    // Give it a tiny delay to hide the UI elements cleanly before screenshot
+    setTimeout(async () => {
+      try {
+        const canvas = await html2canvas(shareContainerRef.current, {
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: '#050505',
+          scale: 2 // High resolution
+        });
+        
+        const image = canvas.toDataURL("image/png");
+        
+        // Create an invisible link to trigger download
+        const a = document.createElement('a');
+        a.href = image;
+        a.download = `mokat-ride-${new Date().getTime()}.png`;
+        a.click();
+        
+      } catch (err) {
+        console.error("Failed to generate image:", err);
+        alert("Gagal men-generate gambar SG. Pastikan peta sudah ter-load sepenuhnya.");
+      } finally {
+        setIsExporting(false);
+      }
+    }, 500);
+  };
+
   const startTracking = () => {
     if (!navigator.geolocation) {
       alert("Geolocation tidak didukung");
@@ -154,7 +187,6 @@ function App() {
     setDistance(0);
     setTime(0);
 
-    // Center immediately on start
     handleCenterMap();
 
     timerRef.current = setInterval(() => {
@@ -284,8 +316,15 @@ function App() {
         <>
           <div className="dashboard-spacer"></div>
           
-          {/* LOCATE BUTTON */}
-          {!viewingRoute && (
+          {/* Watermark Logo (Only visible during export) */}
+          {isExporting && (
+             <div style={{ position: 'absolute', top: '40px', left: '20px', zIndex: 50, color: '#fff', fontSize: '24px', fontWeight: 'bold', textShadow: '0 2px 10px rgba(0,0,0,0.8)' }}>
+                MOKAT<span style={{color: '#4a90e2'}}>TOURING</span>
+             </div>
+          )}
+
+          {/* LOCATE BUTTON - Hide during export */}
+          {!viewingRoute && !isExporting && (
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
               <button 
                 className="glass-button" 
@@ -297,21 +336,32 @@ function App() {
             </div>
           )}
 
-          {viewingRoute && (
+          {/* VIEWING ROUTE HEADER - Hide during export */}
+          {viewingRoute && !isExporting && (
              <div className="glass-panel" style={{ padding: '12px', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                <div>
                  <p style={{fontSize: '12px', color: '#888'}}>Viewing Saved Route</p>
                  <p style={{fontSize: '14px', fontWeight: 'bold'}}>{new Date(viewingRoute.created_at).toLocaleDateString()}</p>
                </div>
-               <button className="glass-button" style={{padding: '6px 12px', fontSize: '12px'}} onClick={() => {
-                 setViewingRoute(null);
-                 setRoutePath([]);
-                 handleCenterMap();
-               }}>Close</button>
+               
+               <div style={{ display: 'flex', gap: '8px' }}>
+                 <button className="glass-button primary" style={{padding: '6px 12px', fontSize: '12px', background: '#4a90e2', color: '#fff'}} onClick={generateShareImage}>
+                   <Instagram size={14} style={{ marginRight: '4px' }} /> Share SG
+                 </button>
+                 <button className="glass-button" style={{padding: '6px 12px', fontSize: '12px'}} onClick={() => {
+                   setViewingRoute(null);
+                   setRoutePath([]);
+                   handleCenterMap();
+                 }}>Close</button>
+               </div>
              </div>
           )}
 
-          <div className="stats-panel glass-panel">
+          {/* STATS PANEL */}
+          <div className="stats-panel glass-panel" style={{ 
+            marginBottom: isExporting ? '40px' : '24px', 
+            background: isExporting ? 'rgba(0,0,0,0.8)' : undefined // Darker background for export readability
+          }}>
             <div className="stat-item">
               <div className="stat-value">{viewingRoute ? Math.round(viewingRoute.avg_speed) : speed}<span>km/h</span></div>
               <div className="stat-label">{viewingRoute ? 'Avg Spd' : 'Speed'}</div>
@@ -326,7 +376,7 @@ function App() {
             </div>
           </div>
 
-          {!viewingRoute && (
+          {!viewingRoute && !isExporting && (
             <div className="action-area">
               <div className="btn-start" onClick={isTracking ? stopTracking : startTracking}>
                 <div className="btn-inner" style={{ color: isTracking ? '#ef4444' : '#000' }}>
@@ -471,7 +521,7 @@ function App() {
   ];
 
   return (
-    <div className="app-container">
+    <div className="app-container" ref={shareContainerRef}>
       
       {/* Map is only visible on the RIDE tab */}
       {activeTab === 'RIDE' && session && (
@@ -490,31 +540,38 @@ function App() {
       )}
 
       <div className="content-layer">
-        <header className="top-nav">
-          <div className="profile-pic" />
-          <div className="status-badge">
-            <span className="dot" style={{ backgroundColor: isTracking ? '#ef4444' : '#4ade80', boxShadow: isTracking ? '0 0 8px #ef4444' : '0 0 8px #4ade80' }}></span>
-            {statusText}
-          </div>
-          <button className="icon-btn" onClick={handleSignOut} title="Sign Out">
-            <LogOut size={20} />
-          </button>
-        </header>
+        
+        {/* Hide Top Nav during Export for cleaner screenshot */}
+        {!isExporting && (
+          <header className="top-nav">
+            <div className="profile-pic" />
+            <div className="status-badge">
+              <span className="dot" style={{ backgroundColor: isTracking ? '#ef4444' : '#4ade80', boxShadow: isTracking ? '0 0 8px #ef4444' : '0 0 8px #4ade80' }}></span>
+              {statusText}
+            </div>
+            <button className="icon-btn" onClick={handleSignOut} title="Sign Out">
+              <LogOut size={20} />
+            </button>
+          </header>
+        )}
 
         {renderContent()}
 
-        <nav className="bottom-nav">
-          {navItems.map((item) => (
-            <div 
-              key={item.id}
-              className={`nav-item ${activeTab === item.id ? 'active' : ''}`}
-              onClick={() => setActiveTab(item.id)}
-            >
-              <item.icon size={24} />
-              <span className="nav-label">{item.label}</span>
-            </div>
-          ))}
-        </nav>
+        {/* Hide Bottom Nav during Export */}
+        {!isExporting && (
+          <nav className="bottom-nav">
+            {navItems.map((item) => (
+              <div 
+                key={item.id}
+                className={`nav-item ${activeTab === item.id ? 'active' : ''}`}
+                onClick={() => setActiveTab(item.id)}
+              >
+                <item.icon size={24} />
+                <span className="nav-label">{item.label}</span>
+              </div>
+            ))}
+          </nav>
+        )}
       </div>
     </div>
   );
