@@ -467,7 +467,7 @@ function App() {
     }
     if (shareTheme === 'MINIMAL') {
       return {
-        wrapper: { ...shareWrapper, top: '40px', left: '20px', right: '20px', background: 'rgba(255,255,255,0.95)', padding: '24px', borderRadius: '24px', boxShadow: '0 20px 40px rgba(0,0,0,0.5)' },
+        wrapper: { position: 'absolute', top: '40px', left: '20px', right: '20px', background: 'rgba(255,255,255,0.95)', padding: '24px', borderRadius: '24px', boxShadow: '0 20px 40px rgba(0,0,0,0.5)' },
         title: { fontSize: '24px', fontWeight: '800', color: '#000', marginBottom: '4px' },
         date: { fontSize: '12px', color: '#666', marginBottom: '20px' },
         statRow: { display: 'flex', justifyContent: 'space-between' },
@@ -477,7 +477,7 @@ function App() {
     }
     if (shareTheme === 'STRAVA_DARK') {
       return {
-        wrapper: { ...shareWrapper, top: '100px', left: '40px', color: '#fff' },
+        wrapper: { position: 'absolute', top: '100px', left: '40px', color: '#fff', zIndex: 50 },
         title: { fontSize: '28px', fontWeight: '900', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '1px', textShadow: '0 4px 20px rgba(0,0,0,0.8)' },
         date: { fontSize: '14px', color: '#fc4c02', marginBottom: '32px', fontWeight: 'bold', textShadow: '0 2px 10px rgba(0,0,0,0.8)' },
         statRow: { display: 'flex', flexDirection: 'column', gap: '24px' },
