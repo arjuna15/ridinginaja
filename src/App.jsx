@@ -379,7 +379,16 @@ function App() {
 
   const joinRadio = async () => {
     try {
-      // 1. Enhanced WebRTC audio constraints for mobile & desktop
+      // 1. AudioContext unlock for iOS Safari & Android Chrome
+      if (window.AudioContext || window.webkitAudioContext) {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        const tempCtx = new AudioCtx();
+        if (tempCtx.state === 'suspended') {
+          tempCtx.resume();
+        }
+      }
+
+      // 2. Enhanced WebRTC audio constraints for mobile & desktop
       const stream = await navigator.mediaDevices.getUserMedia({ 
         audio: { 
           echoCancellation: true, 
@@ -388,12 +397,24 @@ function App() {
         } 
       });
       
-      // Ensure audio track is enabled
+      // Ensure audio tracks are enabled
       stream.getAudioTracks().forEach(track => { track.enabled = true; });
       localStreamRef.current = stream;
       setIsMuted(false);
       
-      const peer = new Peer();
+      // 3. Initialize PeerJS with STUN servers for NAT traversal across 4G/5G/WiFi
+      const peer = new Peer({
+        config: {
+          iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' },
+            { urls: 'stun:stun2.l.google.com:19302' },
+            { urls: 'stun:stun3.l.google.com:19302' },
+            { urls: 'stun:stun4.l.google.com:19302' },
+            { urls: 'stun:global.stun.twilio.com:3478' }
+          ]
+        }
+      });
       peerInstanceRef.current = peer;
 
       peer.on('error', (err) => {
@@ -417,7 +438,7 @@ function App() {
                 // Initiate call if not already connected and our ID is lexicographically greater
                 if (!callsRef.current[presence.peerId] && id > presence.peerId) {
                   const call = peer.call(presence.peerId, stream);
-                  if (call) setupCallEvents(call, presence.email || presence.displayName || "Rider");
+                  if (call) setupCallEvents(call, presence.displayName || presence.email || "Rider");
                 }
               }
             }
@@ -466,7 +487,11 @@ function App() {
       if (!audio) {
         audio = document.createElement('audio');
         audio.id = `audio-${call.peer}`;
-        audio.style.display = 'none';
+        // DO NOT use display:none as it mutes WebKit/Blink media audio context
+        audio.style.position = 'fixed';
+        audio.style.top = '-9999px';
+        audio.style.opacity = '0';
+        audio.style.pointerEvents = 'none';
         document.body.appendChild(audio);
       }
       
@@ -478,15 +503,19 @@ function App() {
       
       // Attempt immediate play & attach tap-to-play fallback for mobile browser autoplay policy
       const playAudio = () => {
-        audio.play().catch(err => {
+        audio.play().then(() => {
+          console.log(`Audio playing for peer ${call.peer}`);
+        }).catch(err => {
           console.log("Autoplay blocked by browser policy, unlocking on next user tap:", err);
           const unlock = () => {
             audio.play().catch(() => {});
             document.removeEventListener('pointerdown', unlock);
             document.removeEventListener('click', unlock);
+            document.removeEventListener('touchstart', unlock);
           };
           document.addEventListener('pointerdown', unlock, { once: true });
           document.addEventListener('click', unlock, { once: true });
+          document.addEventListener('touchstart', unlock, { once: true });
         });
       };
       
