@@ -114,6 +114,8 @@ function App() {
   const [radioStatus, setRadioStatus] = useState("Offline");
   const [radioPeers, setRadioPeers] = useState([]);
   const [isMuted, setIsMuted] = useState(false);
+  const [audioInputs, setAudioInputs] = useState([]);
+  const [selectedAudioInput, setSelectedAudioInput] = useState('');
   const localStreamRef = useRef(null);
   const peerInstanceRef = useRef(null);
   const radioChannelRef = useRef(null);
@@ -401,10 +403,45 @@ function App() {
     }
   };
 
+  const enumerateMics = async () => {
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const mics = devices.filter(d => d.kind === 'audioinput');
+      setAudioInputs(mics);
+      if (mics.length > 0 && !selectedAudioInput) {
+        setSelectedAudioInput(mics[0].deviceId);
+      }
+    } catch (err) {
+      console.warn("Could not enumerate mics:", err);
+    }
+  };
+
+  const switchMicrophone = async (deviceId) => {
+    setSelectedAudioInput(deviceId);
+    try {
+      const newStream = await navigator.mediaDevices.getUserMedia({
+        audio: { deviceId: { exact: deviceId } }
+      });
+      const newTrack = newStream.getAudioTracks()[0];
+      if (localStreamRef.current) {
+        const oldTrack = localStreamRef.current.getAudioTracks()[0];
+        if (oldTrack) oldTrack.stop();
+        localStreamRef.current.removeTrack(oldTrack);
+        localStreamRef.current.addTrack(newTrack);
+        newTrack.enabled = !isMuted;
+      }
+      Object.values(callsRef.current).forEach(call => {
+        const sender = call.peerConnection?.getSenders().find(s => s.track?.kind === 'audio');
+        if (sender) sender.replaceTrack(newTrack);
+      });
+    } catch (err) {
+      console.error("Failed to switch mic:", err);
+    }
+  };
+
   const joinRadio = async () => {
     try {
       setRadioStatus("Connecting Microphone...");
-      // 1. AudioContext unlock
       if (window.AudioContext || window.webkitAudioContext) {
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
         const tempCtx = new AudioCtx();
@@ -413,18 +450,24 @@ function App() {
         }
       }
 
-      // 2. Enhanced WebRTC audio constraints for mobile & desktop
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        audio: { 
-          echoCancellation: true, 
-          noiseSuppression: true, 
-          autoGainControl: true 
-        } 
-      });
+      let stream = null;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ 
+          audio: { 
+            echoCancellation: true, 
+            noiseSuppression: true, 
+            autoGainControl: true 
+          } 
+        });
+      } catch (e1) {
+        // Fallback for laptops with strict/virtual drivers
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      }
       
       stream.getAudioTracks().forEach(track => { track.enabled = true; });
       localStreamRef.current = stream;
       setIsMuted(false);
+      await enumerateMics();
       
       setRadioStatus("Connecting to Peer Server...");
 
@@ -927,6 +970,25 @@ function App() {
                       </div>
                     </div>
                  </div>
+
+                 {/* Microphone Device Picker for Laptops/Desktops */}
+                 {audioInputs.length > 1 && (
+                   <div style={{ background: 'rgba(255,255,255,0.04)', padding: '12px 16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                     <label style={{ fontSize: '11px', color: '#888', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '700', display: 'block', marginBottom: '6px' }}>Select Laptop Microphone:</label>
+                     <select 
+                       className="glass-input" 
+                       value={selectedAudioDevice} 
+                       onChange={(e) => switchMicrophone(e.target.value)}
+                       style={{ fontSize: '13px', padding: '8px', background: 'rgba(0,0,0,0.5)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)' }}
+                     >
+                       {audioInputs.map((mic, idx) => (
+                         <option key={mic.deviceId || idx} value={mic.deviceId} style={{ background: '#111', color: '#fff' }}>
+                           {mic.label || `Microphone ${idx + 1}`}
+                         </option>
+                       ))}
+                     </select>
+                   </div>
+                 )}
 
                  {radioPeers.map(peer => (
                    <div key={peer.id} style={{ background: 'rgba(74, 144, 226, 0.1)', border: '1px solid rgba(74, 144, 226, 0.3)', padding: '12px 16px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
