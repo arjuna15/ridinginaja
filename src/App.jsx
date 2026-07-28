@@ -133,6 +133,8 @@ function App() {
 
   useEffect(() => {
     if (session?.user) {
+      const savedName = localStorage.getItem('mokat_name_' + session.user.id) || session.user.user_metadata?.display_name || session.user.email?.split('@')[0] || '';
+      setDisplayName(savedName);
       fetchCloudData();
       navigator.geolocation.getCurrentPosition(
         (pos) => {
@@ -335,6 +337,18 @@ function App() {
       setBikes(bikes.filter(b => b.id !== bikeId));
     } else {
       console.error("Failed to delete bike:", error);
+    }
+  };
+
+  const handleUpdateDisplayName = async (name) => {
+    setDisplayName(name);
+    if (session?.user?.id) {
+      localStorage.setItem('mokat_name_' + session.user.id, name);
+      try {
+        await supabase.auth.updateUser({ data: { display_name: name } });
+      } catch (e) {
+        console.error("Error updating user metadata:", e);
+      }
     }
   };
 
@@ -911,21 +925,24 @@ function App() {
           
           {/* Profile Card */}
           <div className="glass-panel" style={{ padding: '28px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
-            <div style={{ width: '72px', height: '72px', borderRadius: '50%', background: 'linear-gradient(135deg, #4a90e2, #2b5b94)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 24px rgba(74,144,226,0.3)' }}>
-              <User size={32} color="#fff" />
+            <div style={{ width: '72px', height: '72px', borderRadius: '50%', background: 'linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.03) 100%)', border: '1px solid rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 24px rgba(0,0,0,0.4)', fontSize: '28px', fontWeight: '900', color: '#fff' }}>
+              {(displayName?.trim()?.[0] || session?.user?.email?.[0] || 'J').toUpperCase()}
             </div>
-            <div style={{ textAlign: 'center' }}>
-              <input 
-                className="glass-input" 
-                value={displayName} 
-                onChange={(e) => setDisplayName(e.target.value)}
-                placeholder="Your display name"
-                style={{ textAlign: 'center', fontSize: '18px', fontWeight: '700', background: 'transparent', border: 'none', padding: '8px', borderRadius: '12px' }}
-              />
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center', color: '#888', fontSize: '13px', marginTop: '4px' }}>
+            <div style={{ textAlign: 'center', width: '100%' }}>
+              <div style={{ position: 'relative', display: 'inline-block', width: '80%' }}>
+                <input 
+                  className="glass-input" 
+                  value={displayName} 
+                  onChange={(e) => handleUpdateDisplayName(e.target.value)}
+                  placeholder="Enter your name..."
+                  style={{ textAlign: 'center', fontSize: '18px', fontWeight: '800', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', padding: '10px 16px', borderRadius: '16px', color: '#fff' }}
+                />
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center', color: '#888', fontSize: '13px', marginTop: '8px' }}>
                 <Mail size={14} />
                 {session?.user?.email || 'No email'}
               </div>
+              <div style={{ fontSize: '11px', color: '#4ade80', marginTop: '4px', fontWeight: '600' }}>✓ Auto-saved to Cloud & Device</div>
             </div>
           </div>
 
