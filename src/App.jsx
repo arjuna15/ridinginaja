@@ -231,10 +231,12 @@ function App() {
     setIsCapturing(true);
 
     try {
+      const target = shareContainerRef.current;
       const bgColor = isTransparentBg ? null : (themeConfigs[shareTheme]?.bg || '#050505');
-      const canvas = await html2canvas(shareContainerRef.current, {
+
+      const canvas = await html2canvas(target, {
         useCORS: true,
-        scale: 2.77, // Renders exactly 1080x1920 Instagram Story HD Resolution
+        scale: 3, // Capture high resolution HD
         backgroundColor: bgColor,
         logging: false
       });
@@ -823,12 +825,12 @@ function App() {
     }
     // Default: STRAVA_DARK / Pro — Centered vertical, clean
     return {
-      wrapper: { position: 'absolute', top: '8%', left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', color: '#fff', zIndex: 50 },
+      wrapper: { position: 'absolute', top: '80px', left: 0, right: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', color: '#fff', zIndex: 50 },
       title: { display: 'none' },
       date: { display: 'none' },
-      statRow: { display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center', textAlign: 'center' },
-      statVal: { fontSize: '44px', fontWeight: '900', textShadow: '0 4px 20px rgba(0,0,0,0.8)' },
-      statLbl: { fontSize: '12px', color: '#aaa', textTransform: 'uppercase', letterSpacing: '2px', marginTop: '2px', textShadow: '0 2px 10px rgba(0,0,0,0.8)' }
+      statRow: { display: 'flex', flexDirection: 'column', gap: '24px', alignItems: 'center', textAlign: 'center' },
+      statVal: { fontSize: '40px', fontWeight: '900', textShadow: '0 4px 20px rgba(0,0,0,0.8)', display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: '6px', lineHeight: '1' },
+      statLbl: { fontSize: '11px', color: '#888', textTransform: 'uppercase', letterSpacing: '2px', marginTop: '4px', textShadow: '0 2px 10px rgba(0,0,0,0.8)' }
     };
   };
 
@@ -1314,8 +1316,8 @@ function App() {
         justifyContent: 'center',
         pointerEvents: 'none',
         zIndex: shareMode ? 50 : 1,
-        transform: shareMode ? 'translateY(-12%) scale(0.55)' : 'none',
-        transition: 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+        transform: (shareMode && !isCapturing) ? 'translateY(-12%) scale(0.55)' : 'none',
+        transition: isCapturing ? 'none' : 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
       }}>
         <div 
           ref={shareContainerRef} 
