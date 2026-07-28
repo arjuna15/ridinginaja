@@ -28,11 +28,10 @@ function MapBoundsFitter({ path, isShareMode, shareTheme }) {
     if (path && path.length > 0) {
       const bounds = L.latLngBounds(path);
       let pTL = [40, 40];
-      let pBR = [40, 160];
+      let pBR = [40, 40];
       
-      if (isShareMode && shareTheme === 'STRAVA_DARK') {
-         pTL = [40, 350]; // Push route down
-         pBR = [40, 40];
+      if (isShareMode) {
+         pBR = [40, 100]; // General bottom padding for all share modes to clear bottom logos
       }
       
       map.fitBounds(bounds, { 
@@ -780,7 +779,7 @@ function App() {
         
         {/* MAP LAYER */}
         {activeTab === 'RIDE' && session && (
-          <div className="map-background" style={{ opacity: 1 }}>
+          <div className="map-background" style={{ opacity: 1, transform: (shareMode && shareTheme === 'STRAVA_DARK') ? 'translateY(15%) scale(0.85)' : 'none', transformOrigin: 'center center', transition: 'transform 0.4s' }}>
             <MapContainer ref={mapRef} center={currentPosition} zoom={15} zoomControl={false} attributionControl={false} style={{ height: '100%', width: '100%', backgroundColor: (shareTheme === 'NEON') ? '#000' : 'transparent' }}>
               {!(shareMode && (shareTheme === 'NEON' || shareTheme === 'STRAVA_DARK')) && (
                 <TileLayer
