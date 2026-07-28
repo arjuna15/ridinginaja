@@ -316,9 +316,7 @@ function App() {
       user_id: session.user.id,
       brand: toSave.brand,
       name: toSave.name,
-      type: toSave.type || '',
-      cc: toSave.cc || null,
-      img: toSave.img || null
+      type: toSave.type || 'Standard'
     };
     const { data, error } = await supabase.from('motorcycles').insert([newBikeRow]).select();
     if (!error && data) {
@@ -833,7 +831,11 @@ function App() {
                   filteredBikes.map((bike, i) => (
                     <div key={i} className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: '14px', cursor: 'pointer', padding: '14px' }} onClick={() => handleSaveBike(bike)}>
                       <div style={{ width: '56px', height: '56px', borderRadius: '14px', background: 'rgba(255,255,255,0.06)', overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <img src={bike.img} alt={bike.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4a90e2" stroke-width="2"><circle cx="5" cy="18" r="3"/><circle cx="19" cy="18" r="3"/><path d="M12 18V6l7 12"/><path d="M5 18l7-12"/></svg></div>'; }} />
+                        {bike.img ? (
+                          <img src={bike.img} alt={bike.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                        ) : (
+                          <Bike size={24} color="#4a90e2" />
+                        )}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{bike.brand} {bike.name}</h3>
@@ -862,30 +864,35 @@ function App() {
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', overflowY: 'auto', flex: 1 }}>
-                  {bikes.map(bike => (
-                    <div key={bike.id} className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: '16px', justifyContent: 'space-between' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1, minWidth: 0 }}>
-                        <div style={{ width: '56px', height: '56px', borderRadius: '14px', background: 'rgba(255,255,255,0.06)', overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          {bike.img ? (
-                            <img src={bike.img} alt={bike.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { e.target.style.display = 'none'; }} />
-                          ) : (
-                            <Bike size={24} color="#4a90e2" />
-                          )}
+                  {bikes.map(bike => {
+                    const dbBike = bikeDatabase.find(b => b.brand.toLowerCase() === (bike.brand || '').toLowerCase() && b.name.toLowerCase() === (bike.name || '').toLowerCase());
+                    const imgUrl = bike.img || dbBike?.img;
+                    const ccVal = bike.cc || dbBike?.cc;
+                    return (
+                      <div key={bike.id} className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: '16px', justifyContent: 'space-between' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1, minWidth: 0 }}>
+                          <div style={{ width: '56px', height: '56px', borderRadius: '14px', background: 'rgba(255,255,255,0.06)', overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            {imgUrl ? (
+                              <img src={imgUrl} alt={bike.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                            ) : (
+                              <Bike size={24} color="#4a90e2" />
+                            )}
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{bike.brand} {bike.name}</h3>
+                            <p style={{ fontSize: '13px', color: '#888', fontWeight: '500' }}>{bike.type || 'Standard'}{ccVal ? ` • ${ccVal}cc` : ''}</p>
+                          </div>
                         </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{bike.brand} {bike.name}</h3>
-                          <p style={{ fontSize: '13px', color: '#888', fontWeight: '500' }}>{bike.type || 'Standard'}{bike.cc ? ` • ${bike.cc}cc` : ''}</p>
-                        </div>
+                        <button 
+                          onClick={() => handleDeleteBike(bike.id)}
+                          style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444', borderRadius: '12px', padding: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s' }}
+                          title="Delete Motorcycle"
+                        >
+                          <Trash2 size={18} />
+                        </button>
                       </div>
-                      <button 
-                        onClick={() => handleDeleteBike(bike.id)}
-                        style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444', borderRadius: '12px', padding: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s' }}
-                        title="Delete Motorcycle"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </>
