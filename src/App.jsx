@@ -1316,126 +1316,139 @@ function App() {
 
   return (
     <div className="app-container" style={{ background: shareTheme === 'NEON' && shareMode ? '#000' : '' }}>
-      
-      {/* 
-        This is the DOM node we will screenshot. 
-      */}
-      <div 
-        ref={shareContainerRef} 
-        style={{ 
-          position: 'absolute', 
-          top: (shareMode && !isCapturing) ? '36%' : (shareMode ? '50%' : 0), 
-          left: shareMode ? '50%' : 0, 
-          right: shareMode ? 'auto' : 0, 
-          bottom: shareMode ? 'auto' : 0, 
-          width: shareMode ? '390px' : '100%',
-          height: shareMode ? '693px' : '100%',
-          overflow: 'hidden', 
-          background: isTransparentBg ? 'transparent' : (themeConfigs[shareTheme]?.bg || ((shareMode && shareTheme === 'NEON') ? '#000' : 'transparent')),
-          transform: (shareMode && !isCapturing) ? 'translate(-50%, -50%) scale(0.52)' : (shareMode ? 'translate(-50%, -50%)' : 'none'),
-          transformOrigin: 'center center',
-          transition: 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-          pointerEvents: shareMode ? 'none' : 'auto' // Prevent map dragging during share preview
-        }}
-      >
-        
-        {/* MAP LAYER */}
-        {activeTab === 'RIDE' && session && (
-          <div className="map-background" style={{ 
-            opacity: (shareMode && themeConfigs[shareTheme]?.hideMap) ? 0 : 1, 
-            position: 'absolute',
-            top: 0, bottom: 0, left: 0, right: 0
-          }}>
-            <MapContainer ref={mapRef} center={currentPosition} zoom={15} zoomControl={false} attributionControl={false} style={{ height: '100%', width: '100%', backgroundColor: 'transparent' }}>
-              {!(shareMode && themeConfigs[shareTheme]?.hideMap) && (
-                <TileLayer
-                  url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-                  subdomains={['a', 'b', 'c', 'd']}
-                  maxZoom={19}
-                  attribution=""
+      {/* OUTER SHARE PREVIEW CONTAINER */}
+      <div style={{
+        position: 'absolute',
+        top: 0, left: 0, right: 0, bottom: 0,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        pointerEvents: 'none',
+        zIndex: shareMode ? 50 : 1,
+        transform: (shareMode && !isCapturing) ? 'translateY(-12%) scale(0.55)' : 'none',
+        transition: 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+      }}>
+        <div 
+          ref={shareContainerRef} 
+          style={{ 
+            position: 'relative', 
+            width: shareMode ? '390px' : '100%',
+            height: shareMode ? '693px' : '100%',
+            overflow: 'hidden', 
+            borderRadius: shareMode ? '24px' : '0px',
+            boxShadow: shareMode ? '0 25px 60px rgba(0,0,0,0.8)' : 'none',
+            background: isTransparentBg ? 'transparent' : (themeConfigs[shareTheme]?.bg || ((shareMode && shareTheme === 'NEON') ? '#000' : 'transparent')),
+            pointerEvents: shareMode ? 'none' : 'auto' // Prevent map dragging during share preview
+          }}
+        >
+          
+          {/* MAP LAYER */}
+          {activeTab === 'RIDE' && session && (
+            <div className="map-background" style={{ 
+              opacity: (shareMode && themeConfigs[shareTheme]?.hideMap) ? 0 : 1, 
+              position: 'absolute',
+              top: 0, bottom: 0, left: 0, right: 0
+            }}>
+              <MapContainer ref={mapRef} center={currentPosition} zoom={15} zoomControl={false} attributionControl={false} style={{ height: '100%', width: '100%', backgroundColor: 'transparent' }}>
+                {!(shareMode && themeConfigs[shareTheme]?.hideMap) && (
+                  <TileLayer
+                    url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                    subdomains={['a', 'b', 'c', 'd']}
+                    maxZoom={19}
+                    attribution=""
+                  />
+                )}
+                {viewingRoute && viewingRoute.route_path && <MapBoundsFitter path={viewingRoute.route_path} isShareMode={shareMode} shareTheme={shareTheme} />}
+                <Polyline 
+                  positions={routePath} 
+                  color={shareMode ? (themeConfigs[shareTheme]?.routeColor || '#4a90e2') : '#4a90e2'} 
+                  weight={shareMode ? 6 : 4} 
+                  opacity={1} 
                 />
-              )}
-              {viewingRoute && viewingRoute.route_path && <MapBoundsFitter path={viewingRoute.route_path} isShareMode={shareMode} shareTheme={shareTheme} />}
-              <Polyline 
-                positions={routePath} 
-                color={shareMode ? (themeConfigs[shareTheme]?.routeColor || '#4a90e2') : '#4a90e2'} 
-                weight={shareMode ? 6 : 4} 
-                opacity={1} 
-              />
-              {!viewingRoute && <Marker position={currentPosition} icon={bikeIcon} />}
-            </MapContainer>
-          </div>
-        )}
+                {!viewingRoute && <Marker position={currentPosition} icon={bikeIcon} />}
+              </MapContainer>
+            </div>
+          )}
 
-        {/* CUSTOM LOGO FOR SHARE SCREENSHOT */}
-        {shareMode && (
-           <div style={{ position: 'absolute', top: shareTheme === 'CLASSIC' ? '40px' : 'auto', bottom: shareTheme === 'CLASSIC' ? 'auto' : '40px', left: '20px', zIndex: 60 }}>
-              <img src="/logo_white.png" alt="Mokat Touring Logo" style={{ height: '24px', width: 'auto', filter: shareTheme === 'NEON' ? 'drop-shadow(0 0 10px #0f0)' : 'drop-shadow(0 2px 10px rgba(0,0,0,0.8))' }} />
-           </div>
-        )}
-
-        {/* STRICT STATS OVERLAY FOR SHARE */}
-        {shareMode && viewingRoute && (
-          <div style={getShareStyles().wrapper}>
-             <div style={getShareStyles().title}>{storyTitle || 'My Touring Ride'}</div>
-             <div style={getShareStyles().date}>{new Date(viewingRoute.created_at).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
-             
-             <div style={getShareStyles().statRow}>
-                <div>
-                   <div style={getShareStyles().statVal}>{Number(viewingRoute.distance).toFixed(1)} <span style={{fontSize:'0.5em', fontWeight:'normal'}}>km</span></div>
-                   <div style={getShareStyles().statLbl}>Distance</div>
-                </div>
-                <div>
-                   <div style={getShareStyles().statVal}>{Math.round(viewingRoute.avg_speed)} <span style={{fontSize:'0.5em', fontWeight:'normal'}}>km/h</span></div>
-                   <div style={getShareStyles().statLbl}>Avg Speed</div>
-                </div>
-                <div>
-                   <div style={getShareStyles().statVal}>{formatTime(viewingRoute.time)}</div>
-                   <div style={getShareStyles().statLbl}>Time</div>
-                </div>
+          {/* CUSTOM LOGO FOR SHARE SCREENSHOT */}
+          {shareMode && (
+             <div style={{ position: 'absolute', top: shareTheme === 'CLASSIC' ? '40px' : 'auto', bottom: shareTheme === 'CLASSIC' ? 'auto' : '40px', left: '20px', zIndex: 60 }}>
+                <img src="/logo_white.png" alt="Mokat Touring Logo" style={{ height: '24px', width: 'auto', filter: shareTheme === 'NEON' ? 'drop-shadow(0 0 10px #0f0)' : 'drop-shadow(0 2px 10px rgba(0,0,0,0.8))' }} />
              </div>
+          )}
 
-             {/* SVG Route for themes that hide the map */}
-             {themeConfigs[shareTheme]?.hideMap && viewingRoute.route_path && viewingRoute.route_path.length > 1 && (() => {
-               const path = viewingRoute.route_path;
-               const lats = path.map(p => p[0]);
-               const lngs = path.map(p => p[1]);
-               const minLat = Math.min(...lats), maxLat = Math.max(...lats);
-               const minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
-               const rangeLat = maxLat - minLat || 0.001;
-               const rangeLng = maxLng - minLng || 0.001;
-               const svgW = 200, svgH = 200;
-               const pad = 20;
-               const drawW = svgW - pad * 2;
-               const drawH = svgH - pad * 2;
-               const scale = Math.min(drawW / rangeLng, drawH / rangeLat);
-               const actualW = rangeLng * scale;
-               const actualH = rangeLat * scale;
-               const offsetX = (svgW - actualW) / 2;
-               const offsetY = (svgH - actualH) / 2;
-               const points = path.map(p => {
-                 const x = offsetX + (p[1] - minLng) * scale;
-                 const y = offsetY + (maxLat - p[0]) * scale;
-                 return `${x},${y}`;
-               }).join(' ');
-               return (
-                 <div style={{ 
-                   marginTop: '32px', 
-                   display: 'flex', 
-                   justifyContent: 'center', 
-                   alignItems: 'center',
-                   width: '100%'
-                 }}>
-                   <svg width={svgW} height={svgH} viewBox={`0 0 ${svgW} ${svgH}`}>
-                     <polyline points={points} fill="none" stroke={themeConfigs[shareTheme]?.routeColor || '#fc4c02'} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-                   </svg>
-                 </div>
-               );
-             })()}
-          </div>
-        )}
+          {/* STRICT STATS OVERLAY FOR SHARE */}
+          {shareMode && viewingRoute && (
+            <div style={getShareStyles().wrapper}>
+               <div style={getShareStyles().title}>{storyTitle || 'My Touring Ride'}</div>
+               <div style={getShareStyles().date}>{new Date(viewingRoute.created_at).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
+               
+               <div style={getShareStyles().statRow}>
+                  <div>
+                     <div style={getShareStyles().statVal}>{Number(viewingRoute.distance).toFixed(1)} <span style={{fontSize:'0.5em', fontWeight:'normal'}}>km</span></div>
+                     <div style={getShareStyles().statLbl}>Distance</div>
+                  </div>
+                  <div>
+                     <div style={getShareStyles().statVal}>{Math.round(viewingRoute.avg_speed)} <span style={{fontSize:'0.5em', fontWeight:'normal'}}>km/h</span></div>
+                     <div style={getShareStyles().statLbl}>Avg Speed</div>
+                  </div>
+                  <div>
+                     <div style={getShareStyles().statVal}>{formatTime(viewingRoute.time)}</div>
+                     <div style={getShareStyles().statLbl}>Time</div>
+                  </div>
+               </div>
 
-      </div> {/* END SHARE CONTAINER */}
+               {/* SVG Route for themes that hide the map */}
+               {themeConfigs[shareTheme]?.hideMap && viewingRoute.route_path && viewingRoute.route_path.length > 1 && (() => {
+                 const path = viewingRoute.route_path;
+                 const lats = path.map(p => p[0]);
+                 const lngs = path.map(p => p[1]);
+                 const minLat = Math.min(...lats), maxLat = Math.max(...lats);
+                 const minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
+                 const rangeLat = maxLat - minLat || 0.001;
+                 const rangeLng = maxLng - minLng || 0.001;
+                 const svgW = 280;
+                 const svgH = 280;
+                 const pad = 24;
+                 const drawW = svgW - pad * 2;
+                 const drawH = svgH - pad * 2;
+                 const scale = Math.min(drawW / rangeLng, drawH / rangeLat);
+                 const actualW = rangeLng * scale;
+                 const actualH = rangeLat * scale;
+                 const offsetX = (svgW - actualW) / 2;
+                 const offsetY = (svgH - actualH) / 2;
+                 const points = path.map(p => {
+                   const x = offsetX + (p[1] - minLng) * scale;
+                   const y = offsetY + (maxLat - p[0]) * scale;
+                   return `${x},${y}`;
+                 }).join(' ');
+                 return (
+                   <div style={{ 
+                     marginTop: '32px', 
+                     display: 'flex', 
+                     justifyContent: 'center', 
+                     alignItems: 'center',
+                     width: '100%'
+                   }}>
+                     <svg width={svgW} height={svgH} viewBox={`0 0 ${svgW} ${svgH}`} style={{ filter: `drop-shadow(0 0 15px ${themeConfigs[shareTheme]?.routeColor || '#4a90e2'})` }}>
+                       <polyline
+                         fill="none"
+                         stroke={themeConfigs[shareTheme]?.routeColor || '#4a90e2'}
+                         strokeWidth="4"
+                         strokeLinecap="round"
+                         strokeLinejoin="round"
+                         points={points}
+                       />
+                     </svg>
+                   </div>
+                 );
+               })()}
+
+            </div>
+          )}
+
+        </div>
+      </div> {/* END OUTER SHARE PREVIEW CONTAINER */}
 
 
       {/* INTERACTIVE UI LAYER (Will NOT be captured by html2canvas) */}
