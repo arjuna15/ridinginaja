@@ -848,14 +848,20 @@ function App() {
                const lngs = path.map(p => p[1]);
                const minLat = Math.min(...lats), maxLat = Math.max(...lats);
                const minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
-               const rangeL = maxLat - minLat || 0.001;
-               const rangeN = maxLng - minLng || 0.001;
+               const rangeLat = maxLat - minLat || 0.001;
+               const rangeLng = maxLng - minLng || 0.001;
                const svgW = 200, svgH = 200;
-               const pad = 15;
-               const scale = Math.min((svgW - pad*2) / rangeN, (svgH - pad*2) / rangeL);
+               const pad = 20;
+               const drawW = svgW - pad * 2;
+               const drawH = svgH - pad * 2;
+               const scale = Math.min(drawW / rangeLng, drawH / rangeLat);
+               const actualW = rangeLng * scale;
+               const actualH = rangeLat * scale;
+               const offsetX = (svgW - actualW) / 2;
+               const offsetY = (svgH - actualH) / 2;
                const points = path.map(p => {
-                 const x = pad + (p[1] - minLng) * scale;
-                 const y = pad + (maxLat - p[0]) * scale; // flip Y
+                 const x = offsetX + (p[1] - minLng) * scale;
+                 const y = offsetY + (maxLat - p[0]) * scale;
                  return `${x},${y}`;
                }).join(' ');
                return (
@@ -864,15 +870,9 @@ function App() {
                    display: 'flex', 
                    justifyContent: 'center', 
                    alignItems: 'center',
-                   width: '220px',
-                   height: '220px',
-                   borderRadius: '24px',
-                   background: 'transparent',
-                   border: 'none',
-                   boxShadow: 'none',
-                   padding: '10px'
+                   width: '100%'
                  }}>
-                   <svg width={svgW} height={svgH} viewBox={`0 0 ${svgW} ${svgH}`} style={{ overflow: 'visible' }}>
+                   <svg width={svgW} height={svgH} viewBox={`0 0 ${svgW} ${svgH}`}>
                      <polyline points={points} fill="none" stroke="#fc4c02" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
                    </svg>
                  </div>
