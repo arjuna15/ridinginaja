@@ -1139,7 +1139,9 @@ function App() {
         {/* Hide Top Nav during Share Mode */}
         {!shareMode && (
           <header className="top-nav">
-            <div className="profile-pic" />
+            <div className="avatar-initial">
+              {(displayName?.trim()?.[0] || session?.user?.email?.[0] || 'J').toUpperCase()}
+            </div>
             <div className="status-badge">
               <span className={`dot ${isTracking ? 'recording' : 'ready'}`}></span>
               {statusText}
