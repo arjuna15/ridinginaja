@@ -1313,7 +1313,7 @@ function App() {
           position: 'absolute', 
           top: (shareMode && !isCapturing) ? '38%' : 0, 
           left: 0, 
-          right: shareMode ? 'auto' : 0, 
+          right: 0, 
           bottom: shareMode ? 'auto' : 0, 
           width: '100%',
           aspectRatio: shareMode ? '9/16' : 'auto',
