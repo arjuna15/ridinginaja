@@ -492,12 +492,12 @@ function App() {
     }
     if (shareTheme === 'STRAVA_DARK') {
       return {
-        wrapper: { position: 'absolute', top: '15%', left: 0, right: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', color: '#fff', zIndex: 50 },
+        wrapper: { position: 'absolute', top: '8%', left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', color: '#fff', zIndex: 50 },
         title: { display: 'none' },
         date: { display: 'none' },
-        statRow: { display: 'flex', flexDirection: 'column', gap: '24px', alignItems: 'center', textAlign: 'center' },
-        statVal: { fontSize: '48px', fontWeight: '900', textShadow: '0 4px 20px rgba(0,0,0,0.8)' },
-        statLbl: { fontSize: '14px', color: '#aaa', textTransform: 'uppercase', letterSpacing: '2px', marginTop: '2px', textShadow: '0 2px 10px rgba(0,0,0,0.8)' }
+        statRow: { display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center', textAlign: 'center' },
+        statVal: { fontSize: '44px', fontWeight: '900', textShadow: '0 4px 20px rgba(0,0,0,0.8)' },
+        statLbl: { fontSize: '12px', color: '#aaa', textTransform: 'uppercase', letterSpacing: '2px', marginTop: '2px', textShadow: '0 2px 10px rgba(0,0,0,0.8)' }
       };
     }
   };
@@ -789,10 +789,9 @@ function App() {
         {/* MAP LAYER */}
         {activeTab === 'RIDE' && session && (
           <div className="map-background" style={{ 
-            opacity: 1, 
+            opacity: (shareMode && shareTheme === 'STRAVA_DARK') ? 0 : 1, 
             position: 'absolute',
-            top: (shareMode && shareTheme === 'STRAVA_DARK') ? '40%' : 0, 
-            bottom: 0, left: 0, right: 0
+            top: 0, bottom: 0, left: 0, right: 0
           }}>
             <MapContainer ref={mapRef} center={currentPosition} zoom={15} zoomControl={false} attributionControl={false} style={{ height: '100%', width: '100%', backgroundColor: (shareTheme === 'NEON' || shareTheme === 'STRAVA_DARK') ? 'transparent' : 'transparent' }}>
               {!(shareMode && (shareTheme === 'NEON' || shareTheme === 'STRAVA_DARK')) && (
@@ -841,6 +840,32 @@ function App() {
                    <div style={getShareStyles().statLbl}>Time</div>
                 </div>
              </div>
+
+             {/* SVG Route for STRAVA_DARK - fixed position below stats */}
+             {shareTheme === 'STRAVA_DARK' && viewingRoute.route_path && viewingRoute.route_path.length > 1 && (() => {
+               const path = viewingRoute.route_path;
+               const lats = path.map(p => p[0]);
+               const lngs = path.map(p => p[1]);
+               const minLat = Math.min(...lats), maxLat = Math.max(...lats);
+               const minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
+               const rangeL = maxLat - minLat || 0.001;
+               const rangeN = maxLng - minLng || 0.001;
+               const svgW = 200, svgH = 200;
+               const pad = 15;
+               const scale = Math.min((svgW - pad*2) / rangeN, (svgH - pad*2) / rangeL);
+               const points = path.map(p => {
+                 const x = pad + (p[1] - minLng) * scale;
+                 const y = pad + (maxLat - p[0]) * scale; // flip Y
+                 return `${x},${y}`;
+               }).join(' ');
+               return (
+                 <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'center' }}>
+                   <svg width={svgW} height={svgH} viewBox={`0 0 ${svgW} ${svgH}`} style={{ overflow: 'visible' }}>
+                     <polyline points={points} fill="none" stroke="#fc4c02" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                   </svg>
+                 </div>
+               );
+             })()}
           </div>
         )}
 
