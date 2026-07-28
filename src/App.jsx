@@ -164,11 +164,36 @@ function App() {
     setAuthLoading(true);
     if (isLoginMode) {
       const { error } = await supabase.auth.signInWithPassword({ email: authEmail, password: authPassword });
-      if (error) alert(error.message);
+      if (error) {
+        if (error.message.toLowerCase().includes('rate limit')) {
+          alert("Server email sedang sibuk. Tunggu 1-2 menit lalu coba klik Sign In lagi.");
+        } else {
+          alert(error.message);
+        }
+      }
     } else {
-      const { error } = await supabase.auth.signUp({ email: authEmail, password: authPassword });
-      if (error) alert(error.message);
-      else alert("Akun berhasil dibuat! Silakan cek email jika diminta konfirmasi, atau langsung login.");
+      const { data, error } = await supabase.auth.signUp({ email: authEmail, password: authPassword });
+      if (error) {
+        if (error.message.toLowerCase().includes('rate limit')) {
+          // If rate limit error occurs during signup, attempt direct login as account might already be created
+          const { error: loginError } = await supabase.auth.signInWithPassword({ email: authEmail, password: authPassword });
+          if (!loginError) {
+            // Logged in successfully!
+          } else {
+            alert("Batas pengiriman email server penuh. Silakan langsung pindah ke menu 'Sign In' dan masukkan email/password kamu!");
+            setIsLoginMode(true);
+          }
+        } else {
+          alert(error.message);
+        }
+      } else {
+        if (data?.session) {
+          // Logged in immediately
+        } else {
+          alert("Akun berhasil dibuat! Silakan coba Sign In sekarang.");
+          setIsLoginMode(true);
+        }
+      }
     }
     setAuthLoading(false);
   };
