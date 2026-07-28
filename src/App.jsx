@@ -180,10 +180,11 @@ function App() {
     
     setTimeout(async () => {
       try {
+        const bgColor = themeConfigs[shareTheme]?.bg || '#050505';
         const canvas = await html2canvas(shareContainerRef.current, {
         useCORS: true,
         scale: 2,
-        backgroundColor: shareTheme === 'NEON' ? '#000' : '#050505',
+        backgroundColor: bgColor,
         logging: false
       });
         
@@ -459,6 +460,19 @@ function App() {
   }
 
   // ==== SHARE THEME STYLES ====
+  const themeConfigs = {
+    STRAVA_DARK: { label: 'Pro', color: '#fc4c02', bg: '#050505', routeColor: '#fc4c02', hideMap: true },
+    CLASSIC: { label: 'Classic', color: '#fff', bg: null, routeColor: '#4a90e2', hideMap: false },
+    NEON: { label: 'Neon', color: '#0f0', bg: '#000', routeColor: '#0f0', hideMap: true },
+    MINIMAL: { label: 'Minimal', color: '#000', bg: null, routeColor: '#4a90e2', hideMap: false },
+    SUNSET: { label: 'Sunset', color: '#ff6b35', bg: null, routeColor: '#ff6b35', hideMap: false },
+    MIDNIGHT: { label: 'Midnight', color: '#818cf8', bg: '#0f0a2e', routeColor: '#818cf8', hideMap: true },
+    CARBON: { label: 'Carbon', color: '#e4e4e7', bg: '#18181b', routeColor: '#e4e4e7', hideMap: true },
+    RETRO: { label: 'Retro', color: '#fbbf24', bg: '#1c1917', routeColor: '#fbbf24', hideMap: true },
+    FROST: { label: 'Frost', color: '#06b6d4', bg: '#0c1929', routeColor: '#22d3ee', hideMap: true },
+    LAVA: { label: 'Lava', color: '#ef4444', bg: '#1a0505', routeColor: '#ef4444', hideMap: true },
+  };
+
   const getShareStyles = () => {
     if (shareTheme === 'CLASSIC') {
       return {
@@ -490,16 +504,75 @@ function App() {
         statLbl: { fontSize: '10px', color: '#888', textTransform: 'uppercase', fontWeight: '600' }
       };
     }
-    if (shareTheme === 'STRAVA_DARK') {
+    if (shareTheme === 'SUNSET') {
+      return {
+        wrapper: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: '40px 20px', background: 'linear-gradient(to top, rgba(30,10,0,1) 0%, rgba(80,20,0,0.7) 50%, transparent 100%)', zIndex: 50 },
+        title: { fontSize: '28px', fontWeight: '900', color: '#ff6b35', marginBottom: '4px' },
+        date: { fontSize: '14px', color: '#ffb088', marginBottom: '24px' },
+        statRow: { display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(255,107,53,0.3)', paddingTop: '16px' },
+        statVal: { fontSize: '24px', fontWeight: 'bold', color: '#fff' },
+        statLbl: { fontSize: '12px', color: '#ffb088', textTransform: 'uppercase' }
+      };
+    }
+    if (shareTheme === 'MIDNIGHT') {
       return {
         wrapper: { position: 'absolute', top: '8%', left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', color: '#fff', zIndex: 50 },
         title: { display: 'none' },
         date: { display: 'none' },
         statRow: { display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center', textAlign: 'center' },
-        statVal: { fontSize: '44px', fontWeight: '900', textShadow: '0 4px 20px rgba(0,0,0,0.8)' },
-        statLbl: { fontSize: '12px', color: '#aaa', textTransform: 'uppercase', letterSpacing: '2px', marginTop: '2px', textShadow: '0 2px 10px rgba(0,0,0,0.8)' }
+        statVal: { fontSize: '44px', fontWeight: '900', color: '#c7d2fe', textShadow: '0 0 30px rgba(129,140,248,0.6)' },
+        statLbl: { fontSize: '12px', color: '#818cf8', textTransform: 'uppercase', letterSpacing: '2px', marginTop: '2px' }
       };
     }
+    if (shareTheme === 'CARBON') {
+      return {
+        wrapper: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: '40px 24px', background: 'linear-gradient(to top, #18181b 0%, rgba(24,24,27,0.9) 60%, transparent 100%)', zIndex: 50 },
+        title: { fontSize: '24px', fontWeight: '900', color: '#e4e4e7', letterSpacing: '3px', textTransform: 'uppercase', marginBottom: '4px' },
+        date: { fontSize: '12px', color: '#71717a', marginBottom: '24px', letterSpacing: '1px' },
+        statRow: { display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(228,228,231,0.1)', paddingTop: '16px' },
+        statVal: { fontSize: '22px', fontWeight: '900', color: '#e4e4e7', letterSpacing: '1px' },
+        statLbl: { fontSize: '10px', color: '#52525b', textTransform: 'uppercase', letterSpacing: '2px', fontWeight: '700' }
+      };
+    }
+    if (shareTheme === 'RETRO') {
+      return {
+        wrapper: { position: 'absolute', top: '8%', left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', color: '#fbbf24', zIndex: 50 },
+        title: { display: 'none' },
+        date: { display: 'none' },
+        statRow: { display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center', textAlign: 'center' },
+        statVal: { fontSize: '44px', fontWeight: '900', color: '#fbbf24', textShadow: '0 0 20px rgba(251,191,36,0.4)', fontFamily: '"Outfit", monospace' },
+        statLbl: { fontSize: '12px', color: '#a16207', textTransform: 'uppercase', letterSpacing: '3px', marginTop: '2px' }
+      };
+    }
+    if (shareTheme === 'FROST') {
+      return {
+        wrapper: { position: 'absolute', top: '8%', left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', color: '#fff', zIndex: 50 },
+        title: { display: 'none' },
+        date: { display: 'none' },
+        statRow: { display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center', textAlign: 'center' },
+        statVal: { fontSize: '44px', fontWeight: '900', color: '#e0f2fe', textShadow: '0 0 25px rgba(6,182,212,0.5)' },
+        statLbl: { fontSize: '12px', color: '#06b6d4', textTransform: 'uppercase', letterSpacing: '2px', marginTop: '2px' }
+      };
+    }
+    if (shareTheme === 'LAVA') {
+      return {
+        wrapper: { position: 'absolute', top: '8%', left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', color: '#fff', zIndex: 50 },
+        title: { display: 'none' },
+        date: { display: 'none' },
+        statRow: { display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center', textAlign: 'center' },
+        statVal: { fontSize: '44px', fontWeight: '900', color: '#fca5a5', textShadow: '0 0 30px rgba(239,68,68,0.6)' },
+        statLbl: { fontSize: '12px', color: '#ef4444', textTransform: 'uppercase', letterSpacing: '2px', marginTop: '2px' }
+      };
+    }
+    // Default to STRAVA_DARK
+    return {
+      wrapper: { position: 'absolute', top: '8%', left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', color: '#fff', zIndex: 50 },
+      title: { display: 'none' },
+      date: { display: 'none' },
+      statRow: { display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center', textAlign: 'center' },
+      statVal: { fontSize: '44px', fontWeight: '900', textShadow: '0 4px 20px rgba(0,0,0,0.8)' },
+      statLbl: { fontSize: '12px', color: '#aaa', textTransform: 'uppercase', letterSpacing: '2px', marginTop: '2px', textShadow: '0 2px 10px rgba(0,0,0,0.8)' }
+    };
   };
 
   const renderContent = () => {
@@ -789,12 +862,12 @@ function App() {
         {/* MAP LAYER */}
         {activeTab === 'RIDE' && session && (
           <div className="map-background" style={{ 
-            opacity: (shareMode && shareTheme === 'STRAVA_DARK') ? 0 : 1, 
+            opacity: (shareMode && themeConfigs[shareTheme]?.hideMap) ? 0 : 1, 
             position: 'absolute',
             top: 0, bottom: 0, left: 0, right: 0
           }}>
-            <MapContainer ref={mapRef} center={currentPosition} zoom={15} zoomControl={false} attributionControl={false} style={{ height: '100%', width: '100%', backgroundColor: (shareTheme === 'NEON' || shareTheme === 'STRAVA_DARK') ? 'transparent' : 'transparent' }}>
-              {!(shareMode && (shareTheme === 'NEON' || shareTheme === 'STRAVA_DARK')) && (
+            <MapContainer ref={mapRef} center={currentPosition} zoom={15} zoomControl={false} attributionControl={false} style={{ height: '100%', width: '100%', backgroundColor: 'transparent' }}>
+              {!(shareMode && themeConfigs[shareTheme]?.hideMap) && (
                 <TileLayer
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                   attribution=""
@@ -804,7 +877,7 @@ function App() {
               {viewingRoute && viewingRoute.route_path && <MapBoundsFitter path={viewingRoute.route_path} isShareMode={shareMode} shareTheme={shareTheme} />}
               <Polyline 
                 positions={routePath} 
-                color={shareMode && shareTheme === 'NEON' ? '#0f0' : (shareMode && shareTheme === 'STRAVA_DARK' ? '#fc4c02' : '#4a90e2')} 
+                color={shareMode ? (themeConfigs[shareTheme]?.routeColor || '#4a90e2') : '#4a90e2'} 
                 weight={shareMode ? 6 : 4} 
                 opacity={1} 
               />
@@ -815,8 +888,8 @@ function App() {
 
         {/* CUSTOM LOGO FOR SHARE SCREENSHOT */}
         {shareMode && (
-           <div style={{ position: 'absolute', bottom: shareTheme==='STRAVA_DARK' ? '40px' : 'auto', top: shareTheme==='STRAVA_DARK' ? 'auto' : (shareTheme==='MINIMAL' ? '160px' : '40px'), left: shareTheme==='STRAVA_DARK' ? '40px' : '20px', zIndex: 60 }}>
-              <img src="/logo.png" alt="Mokat Touring Logo" style={{ height: shareTheme === 'STRAVA_DARK' ? '24px' : '40px', width: 'auto', filter: `brightness(0) invert(1) ${shareTheme==='NEON' ? 'drop-shadow(0 0 10px #0f0)' : 'drop-shadow(0 2px 10px rgba(0,0,0,0.8))'}` }} />
+           <div style={{ position: 'absolute', bottom: '40px', left: '20px', zIndex: 60 }}>
+              <img src="/logo.png" alt="Mokat Touring Logo" style={{ height: '24px', width: 'auto', filter: `brightness(0) invert(1) drop-shadow(0 2px 10px rgba(0,0,0,0.8)) ${shareTheme==='NEON' ? 'drop-shadow(0 0 10px #0f0)' : ''}` }} />
            </div>
         )}
 
@@ -841,8 +914,8 @@ function App() {
                 </div>
              </div>
 
-             {/* SVG Route for STRAVA_DARK - fixed position below stats */}
-             {shareTheme === 'STRAVA_DARK' && viewingRoute.route_path && viewingRoute.route_path.length > 1 && (() => {
+             {/* SVG Route for themes that hide the map */}
+             {themeConfigs[shareTheme]?.hideMap && viewingRoute.route_path && viewingRoute.route_path.length > 1 && (() => {
                const path = viewingRoute.route_path;
                const lats = path.map(p => p[0]);
                const lngs = path.map(p => p[1]);
@@ -873,7 +946,7 @@ function App() {
                    width: '100%'
                  }}>
                    <svg width={svgW} height={svgH} viewBox={`0 0 ${svgW} ${svgH}`}>
-                     <polyline points={points} fill="none" stroke="#fc4c02" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                     <polyline points={points} fill="none" stroke={themeConfigs[shareTheme]?.routeColor || '#fc4c02'} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
                    </svg>
                  </div>
                );
@@ -930,11 +1003,19 @@ function App() {
              </button>
           </div>
           
-          <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '20px' }}>
-             <button onClick={() => setShareTheme('STRAVA_DARK')} className="glass-button" style={{ flex: 1, padding: '12px', minWidth: '100px', background: shareTheme === 'STRAVA_DARK' ? '#4a90e2' : 'rgba(255,255,255,0.1)' }}>Pro</button>
-             <button onClick={() => setShareTheme('CLASSIC')} className="glass-button" style={{ flex: 1, padding: '12px', minWidth: '100px', background: shareTheme === 'CLASSIC' ? '#4a90e2' : 'rgba(255,255,255,0.1)' }}>Classic</button>
-             <button onClick={() => setShareTheme('NEON')} className="glass-button" style={{ flex: 1, padding: '12px', minWidth: '100px', background: shareTheme === 'NEON' ? '#4a90e2' : 'rgba(255,255,255,0.1)' }}>Neon</button>
-             <button onClick={() => setShareTheme('MINIMAL')} className="glass-button" style={{ flex: 1, padding: '12px', minWidth: '100px', background: shareTheme === 'MINIMAL' ? '#4a90e2' : 'rgba(255,255,255,0.1)' }}>Minimal</button>
+          <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '20px', WebkitOverflowScrolling: 'touch' }}>
+             {Object.entries(themeConfigs).map(([key, cfg]) => (
+               <button key={key} onClick={() => setShareTheme(key)} className="glass-button" style={{ 
+                 padding: '10px 16px', minWidth: '80px', flexShrink: 0,
+                 background: shareTheme === key ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.04)',
+                 border: shareTheme === key ? `2px solid ${cfg.color}` : '1px solid rgba(255,255,255,0.08)',
+                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px',
+                 borderRadius: '16px', fontSize: '11px', fontWeight: '700'
+               }}>
+                 <span style={{ width: '14px', height: '14px', borderRadius: '50%', background: cfg.color, boxShadow: shareTheme === key ? `0 0 12px ${cfg.color}` : 'none' }}></span>
+                 {cfg.label}
+               </button>
+             ))}
           </div>
 
           <button onClick={generateShareImage} className="glass-button primary" style={{ width: '100%', padding: '16px', fontSize: '16px', fontWeight: 'bold', display: 'flex', justifyContent: 'center', gap: '8px' }}>
