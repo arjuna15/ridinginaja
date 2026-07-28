@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Square, Map as MapIcon, User, Activity, Navigation, ChevronRight, Zap, Bike, LogOut, LocateFixed, Camera, LayoutTemplate, X, Download, Headset, Mic, MicOff, PhoneOff, Search, Settings, Mail, Ruler, Moon, Info, Shield, ChevronDown } from 'lucide-react';
+import { Play, Square, Map as MapIcon, User, Activity, Navigation, ChevronRight, Zap, Bike, LogOut, LocateFixed, Camera, LayoutTemplate, X, Download, Headset, Mic, MicOff, PhoneOff, Search, Settings, Mail, Ruler, Moon, Info, Shield, ChevronDown, Trash2 } from 'lucide-react';
 import { MapContainer, TileLayer, Polyline, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import html2canvas from 'html2canvas';
@@ -328,6 +328,15 @@ function App() {
       setShowAddBike(false);
     } else {
       console.error("Failed to save bike:", error);
+    }
+  };
+
+  const handleDeleteBike = async (bikeId) => {
+    const { error } = await supabase.from('motorcycles').delete().eq('id', bikeId);
+    if (!error) {
+      setBikes(bikes.filter(b => b.id !== bikeId));
+    } else {
+      console.error("Failed to delete bike:", error);
     }
   };
 
@@ -854,18 +863,27 @@ function App() {
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', overflowY: 'auto', flex: 1 }}>
                   {bikes.map(bike => (
-                    <div key={bike.id} className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                      <div style={{ width: '56px', height: '56px', borderRadius: '14px', background: 'rgba(255,255,255,0.06)', overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        {bike.img ? (
-                          <img src={bike.img} alt={bike.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { e.target.style.display = 'none'; }} />
-                        ) : (
-                          <Bike size={24} color="#4a90e2" />
-                        )}
+                    <div key={bike.id} className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: '16px', justifyContent: 'space-between' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1, minWidth: 0 }}>
+                        <div style={{ width: '56px', height: '56px', borderRadius: '14px', background: 'rgba(255,255,255,0.06)', overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          {bike.img ? (
+                            <img src={bike.img} alt={bike.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { e.target.style.display = 'none'; }} />
+                          ) : (
+                            <Bike size={24} color="#4a90e2" />
+                          )}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{bike.brand} {bike.name}</h3>
+                          <p style={{ fontSize: '13px', color: '#888', fontWeight: '500' }}>{bike.type || 'Standard'}{bike.cc ? ` • ${bike.cc}cc` : ''}</p>
+                        </div>
                       </div>
-                      <div>
-                        <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#fff' }}>{bike.brand} {bike.name}</h3>
-                        <p style={{ fontSize: '13px', color: '#888', fontWeight: '500' }}>{bike.type || 'Standard'}{bike.cc ? ` • ${bike.cc}cc` : ''}</p>
-                      </div>
+                      <button 
+                        onClick={() => handleDeleteBike(bike.id)}
+                        style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444', borderRadius: '12px', padding: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s' }}
+                        title="Delete Motorcycle"
+                      >
+                        <Trash2 size={18} />
+                      </button>
                     </div>
                   ))}
                 </div>
