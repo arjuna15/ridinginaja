@@ -779,7 +779,12 @@ function App() {
         
         {/* MAP LAYER */}
         {activeTab === 'RIDE' && session && (
-          <div className="map-background" style={{ opacity: 1, transform: (shareMode && shareTheme === 'STRAVA_DARK') ? 'translateY(15%) scale(0.85)' : 'none', transformOrigin: 'center center', transition: 'transform 0.4s' }}>
+          <div className="map-background" style={{ 
+            opacity: 1, 
+            top: (shareMode && shareTheme === 'STRAVA_DARK') ? '25%' : 0,
+            bottom: (shareMode && shareTheme === 'STRAVA_DARK') ? '-25%' : 0,
+            transition: 'all 0.4s' 
+          }}>
             <MapContainer ref={mapRef} center={currentPosition} zoom={15} zoomControl={false} attributionControl={false} style={{ height: '100%', width: '100%', backgroundColor: (shareTheme === 'NEON') ? '#000' : 'transparent' }}>
               {!(shareMode && (shareTheme === 'NEON' || shareTheme === 'STRAVA_DARK')) && (
                 <TileLayer
