@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Square, Map as MapIcon, User, Activity, Navigation, ChevronRight, Zap, Bike, LogOut, LocateFixed, Camera, LayoutTemplate, X, Download, Headset, Mic, MicOff, PhoneOff } from 'lucide-react';
+import { Play, Square, Map as MapIcon, User, Activity, Navigation, ChevronRight, Zap, Bike, LogOut, LocateFixed, Camera, LayoutTemplate, X, Download, Headset, Mic, MicOff, PhoneOff, Search } from 'lucide-react';
 import { MapContainer, TileLayer, Polyline, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import html2canvas from 'html2canvas';
@@ -7,6 +7,7 @@ import { Peer } from 'peerjs';
 import 'leaflet/dist/leaflet.css';
 import './index.css';
 import { supabase } from './supabaseClient';
+import bikeDatabase from './bikeDatabase';
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -100,6 +101,7 @@ function App() {
   const [rides, setRides] = useState([]);
   const [showAddBike, setShowAddBike] = useState(false);
   const [newBike, setNewBike] = useState({ brand: '', name: '', type: '' });
+  const [bikeSearch, setBikeSearch] = useState('');
   const [viewingRoute, setViewingRoute] = useState(null);
 
   // Radio State
@@ -302,18 +304,22 @@ function App() {
     prevPosRef.current = null;
   };
 
-  const handleSaveBike = async () => {
-    if (!newBike.name || !newBike.brand) return;
-    const newBikeData = {
+  const handleSaveBike = async (bikeData) => {
+    const toSave = bikeData || newBike;
+    if (!toSave.name || !toSave.brand) return;
+    const newBikeRow = {
       user_id: session.user.id,
-      brand: newBike.brand,
-      name: newBike.name,
-      type: newBike.type
+      brand: toSave.brand,
+      name: toSave.name,
+      type: toSave.type || '',
+      cc: toSave.cc || null,
+      img: toSave.img || null
     };
-    const { data, error } = await supabase.from('motorcycles').insert([newBikeData]).select();
+    const { data, error } = await supabase.from('motorcycles').insert([newBikeRow]).select();
     if (!error && data) {
       setBikes([data[0], ...bikes]);
       setNewBike({ brand: '', name: '', type: '' });
+      setBikeSearch('');
       setShowAddBike(false);
     } else {
       console.error("Failed to save bike:", error);
@@ -769,41 +775,68 @@ function App() {
     }
 
     if (activeTab === 'GARAGE') {
+      const filteredBikes = bikeSearch.length > 0 
+        ? bikeDatabase.filter(b => 
+            `${b.brand} ${b.name}`.toLowerCase().includes(bikeSearch.toLowerCase()) ||
+            b.type.toLowerCase().includes(bikeSearch.toLowerCase())
+          ).slice(0, 20)
+        : [];
+
       return (
-        <div className="glass-panel" style={{ flex: 1, padding: '24px', marginTop: '20px', display: 'flex', flexDirection: 'column' }}>
+        <div className="glass-panel" style={{ flex: 1, padding: '24px', marginTop: '20px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           
           {showAddBike ? (
             <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-              <h2 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px' }}>Add Motorcycle</h2>
-              <input 
-                className="glass-input" 
-                placeholder="Brand (e.g. Yamaha, Honda)" 
-                value={newBike.brand} 
-                onChange={(e) => setNewBike({...newBike, brand: e.target.value})} 
-              />
-              <input 
-                className="glass-input" 
-                placeholder="Model Name (e.g. R25, CBR150R)" 
-                value={newBike.name} 
-                onChange={(e) => setNewBike({...newBike, name: e.target.value})} 
-              />
-              <input 
-                className="glass-input" 
-                placeholder="Type (Sport, Matic, Cruiser)" 
-                value={newBike.type} 
-                onChange={(e) => setNewBike({...newBike, type: e.target.value})} 
-              />
-              <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
-                <button className="glass-button" style={{ flex: 1, padding: '12px' }} onClick={() => setShowAddBike(false)}>Cancel</button>
-                <button className="glass-button primary" style={{ flex: 1, padding: '12px' }} onClick={handleSaveBike}>Save</button>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <h2 style={{ fontSize: '18px', fontWeight: '800' }}>Add Motorcycle</h2>
+                <button className="glass-button" style={{ padding: '6px 12px', fontSize: '12px' }} onClick={() => { setShowAddBike(false); setBikeSearch(''); }}>Cancel</button>
+              </div>
+              
+              <div style={{ position: 'relative', marginBottom: '12px' }}>
+                <Search size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#666', pointerEvents: 'none' }} />
+                <input 
+                  className="glass-input" 
+                  placeholder="Search motorcycle... (e.g. Ninja 250, CBR, R25)" 
+                  value={bikeSearch} 
+                  onChange={(e) => setBikeSearch(e.target.value)}
+                  style={{ paddingLeft: '44px' }}
+                  autoFocus
+                />
+              </div>
+
+              <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {bikeSearch.length === 0 ? (
+                  <div style={{ textAlign: 'center', marginTop: '40px', color: '#666' }}>
+                    <Search size={36} style={{ margin: '0 auto 12px', opacity: 0.4 }} />
+                    <p style={{ fontSize: '14px' }}>Search from 100+ motorcycles worldwide</p>
+                    <p style={{ fontSize: '12px', color: '#555', marginTop: '4px' }}>Honda, Yamaha, Kawasaki, Ducati, BMW, etc.</p>
+                  </div>
+                ) : filteredBikes.length === 0 ? (
+                  <div style={{ textAlign: 'center', marginTop: '40px', color: '#666' }}>
+                    <p style={{ fontSize: '14px' }}>No results for "{bikeSearch}"</p>
+                  </div>
+                ) : (
+                  filteredBikes.map((bike, i) => (
+                    <div key={i} className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: '14px', cursor: 'pointer', padding: '14px' }} onClick={() => handleSaveBike(bike)}>
+                      <div style={{ width: '56px', height: '56px', borderRadius: '14px', background: 'rgba(255,255,255,0.06)', overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <img src={bike.img} alt={bike.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4a90e2" stroke-width="2"><circle cx="5" cy="18" r="3"/><circle cx="19" cy="18" r="3"/><path d="M12 18V6l7 12"/><path d="M5 18l7-12"/></svg></div>'; }} />
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{bike.brand} {bike.name}</h3>
+                        <p style={{ fontSize: '12px', color: '#888', fontWeight: '500' }}>{bike.type} • {bike.cc}cc</p>
+                      </div>
+                      <div style={{ color: '#4a90e2', fontSize: '12px', fontWeight: '700', flexShrink: 0 }}>+ ADD</div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           ) : (
             <>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                <h2 style={{ fontSize: '18px', fontWeight: '600' }}>Cloud Garage</h2>
-                <button className="glass-button" style={{ padding: '6px 12px', fontSize: '12px' }} onClick={() => setShowAddBike(true)}>
-                  + Add
+                <h2 style={{ fontSize: '18px', fontWeight: '800' }}>Cloud Garage</h2>
+                <button className="glass-button" style={{ padding: '8px 16px', fontSize: '12px', gap: '6px', display: 'flex', alignItems: 'center' }} onClick={() => setShowAddBike(true)}>
+                  <Search size={14} /> Add Bike
                 </button>
               </div>
 
@@ -811,17 +844,22 @@ function App() {
                 <div style={{ textAlign: 'center', marginTop: '40px', color: '#888' }}>
                   <Bike size={48} style={{ margin: '0 auto 16px', opacity: 0.5 }} />
                   <p>Your garage is empty.</p>
+                  <p style={{ fontSize: '13px', color: '#666', marginTop: '8px' }}>Search from 100+ motorcycles to add.</p>
                 </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', overflowY: 'auto', flex: 1 }}>
                   {bikes.map(bike => (
                     <div key={bike.id} className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                      <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <Bike size={24} color="#4a90e2" />
+                      <div style={{ width: '56px', height: '56px', borderRadius: '14px', background: 'rgba(255,255,255,0.06)', overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        {bike.img ? (
+                          <img src={bike.img} alt={bike.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { e.target.style.display = 'none'; }} />
+                        ) : (
+                          <Bike size={24} color="#4a90e2" />
+                        )}
                       </div>
                       <div>
                         <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#fff' }}>{bike.brand} {bike.name}</h3>
-                        <p style={{ fontSize: '13px', color: '#888', fontWeight: '500' }}>{bike.type || 'Standard'}</p>
+                        <p style={{ fontSize: '13px', color: '#888', fontWeight: '500' }}>{bike.type || 'Standard'}{bike.cc ? ` • ${bike.cc}cc` : ''}</p>
                       </div>
                     </div>
                   ))}
