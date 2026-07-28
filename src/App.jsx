@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Square, Map as MapIcon, User, Activity, Navigation, ChevronRight, Zap, Bike, LogOut, LocateFixed, Camera, LayoutTemplate, X, Download, Headset, Mic, MicOff, PhoneOff, Search } from 'lucide-react';
+import { Play, Square, Map as MapIcon, User, Activity, Navigation, ChevronRight, Zap, Bike, LogOut, LocateFixed, Camera, LayoutTemplate, X, Download, Headset, Mic, MicOff, PhoneOff, Search, Settings, Mail, Ruler, Moon, Info, Shield, ChevronDown } from 'lucide-react';
 import { MapContainer, TileLayer, Polyline, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import html2canvas from 'html2canvas';
@@ -103,6 +103,11 @@ function App() {
   const [newBike, setNewBike] = useState({ brand: '', name: '', type: '' });
   const [bikeSearch, setBikeSearch] = useState('');
   const [viewingRoute, setViewingRoute] = useState(null);
+
+  // Settings State
+  const [displayName, setDisplayName] = useState('');
+  const [distanceUnit, setDistanceUnit] = useState('km'); // km or mi
+  const [speedUnit, setSpeedUnit] = useState('kmh'); // kmh or mph
 
   // Radio State
   const [inRadio, setInRadio] = useState(false);
@@ -870,14 +875,138 @@ function App() {
         </div>
       );
     }
+
+    if (activeTab === 'SETTINGS') {
+      const totalDistance = rides.reduce((sum, r) => sum + (r.distance || 0), 0);
+      const totalTime = rides.reduce((sum, r) => sum + (r.time || 0), 0);
+      const totalRides = rides.length;
+
+      return (
+        <div style={{ flex: 1, marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto', paddingBottom: '20px' }}>
+          
+          {/* Profile Card */}
+          <div className="glass-panel" style={{ padding: '28px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+            <div style={{ width: '72px', height: '72px', borderRadius: '50%', background: 'linear-gradient(135deg, #4a90e2, #2b5b94)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 24px rgba(74,144,226,0.3)' }}>
+              <User size={32} color="#fff" />
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <input 
+                className="glass-input" 
+                value={displayName} 
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder="Your display name"
+                style={{ textAlign: 'center', fontSize: '18px', fontWeight: '700', background: 'transparent', border: 'none', padding: '8px', borderRadius: '12px' }}
+              />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center', color: '#888', fontSize: '13px', marginTop: '4px' }}>
+                <Mail size={14} />
+                {session?.user?.email || 'No email'}
+              </div>
+            </div>
+          </div>
+
+          {/* Stats Summary */}
+          <div className="glass-panel" style={{ padding: '20px 24px' }}>
+            <h3 style={{ fontSize: '13px', fontWeight: '700', color: '#888', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '16px' }}>Your Stats</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-around' }}>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '24px', fontWeight: '900', color: '#fff' }}>{totalRides}</div>
+                <div style={{ fontSize: '11px', color: '#888', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '4px' }}>Rides</div>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '24px', fontWeight: '900', color: '#fff' }}>{totalDistance.toFixed(1)}</div>
+                <div style={{ fontSize: '11px', color: '#888', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '4px' }}>Total KM</div>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '24px', fontWeight: '900', color: '#fff' }}>{bikes.length}</div>
+                <div style={{ fontSize: '11px', color: '#888', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '4px' }}>Bikes</div>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '24px', fontWeight: '900', color: '#fff' }}>{formatTime(totalTime)}</div>
+                <div style={{ fontSize: '11px', color: '#888', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '4px' }}>Total Time</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Preferences */}
+          <div className="glass-panel" style={{ padding: '20px 24px' }}>
+            <h3 style={{ fontSize: '13px', fontWeight: '700', color: '#888', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '16px' }}>Preferences</h3>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              {/* Distance Unit */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <Ruler size={18} color="#4a90e2" />
+                  <span style={{ fontSize: '14px', fontWeight: '600' }}>Distance Unit</span>
+                </div>
+                <div style={{ display: 'flex', gap: '4px', background: 'rgba(255,255,255,0.04)', borderRadius: '12px', padding: '3px' }}>
+                  <button onClick={() => setDistanceUnit('km')} style={{ padding: '6px 14px', borderRadius: '10px', border: 'none', fontSize: '12px', fontWeight: '700', cursor: 'pointer', background: distanceUnit === 'km' ? '#4a90e2' : 'transparent', color: distanceUnit === 'km' ? '#fff' : '#888', transition: 'all 0.3s' }}>KM</button>
+                  <button onClick={() => setDistanceUnit('mi')} style={{ padding: '6px 14px', borderRadius: '10px', border: 'none', fontSize: '12px', fontWeight: '700', cursor: 'pointer', background: distanceUnit === 'mi' ? '#4a90e2' : 'transparent', color: distanceUnit === 'mi' ? '#fff' : '#888', transition: 'all 0.3s' }}>Miles</button>
+                </div>
+              </div>
+
+              {/* Speed Unit */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <Zap size={18} color="#4a90e2" />
+                  <span style={{ fontSize: '14px', fontWeight: '600' }}>Speed Unit</span>
+                </div>
+                <div style={{ display: 'flex', gap: '4px', background: 'rgba(255,255,255,0.04)', borderRadius: '12px', padding: '3px' }}>
+                  <button onClick={() => setSpeedUnit('kmh')} style={{ padding: '6px 14px', borderRadius: '10px', border: 'none', fontSize: '12px', fontWeight: '700', cursor: 'pointer', background: speedUnit === 'kmh' ? '#4a90e2' : 'transparent', color: speedUnit === 'kmh' ? '#fff' : '#888', transition: 'all 0.3s' }}>km/h</button>
+                  <button onClick={() => setSpeedUnit('mph')} style={{ padding: '6px 14px', borderRadius: '10px', border: 'none', fontSize: '12px', fontWeight: '700', cursor: 'pointer', background: speedUnit === 'mph' ? '#4a90e2' : 'transparent', color: speedUnit === 'mph' ? '#fff' : '#888', transition: 'all 0.3s' }}>mph</button>
+                </div>
+              </div>
+
+              {/* Dark Mode (always on, non-functional toggle) */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <Moon size={18} color="#4a90e2" />
+                  <span style={{ fontSize: '14px', fontWeight: '600' }}>Dark Mode</span>
+                </div>
+                <div style={{ padding: '6px 14px', borderRadius: '10px', fontSize: '12px', fontWeight: '700', color: '#4a90e2', background: 'rgba(74,144,226,0.1)' }}>Always On</div>
+              </div>
+            </div>
+          </div>
+
+          {/* About */}
+          <div className="glass-panel" style={{ padding: '20px 24px' }}>
+            <h3 style={{ fontSize: '13px', fontWeight: '700', color: '#888', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '16px' }}>About</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <Info size={18} color="#4a90e2" />
+                  <span style={{ fontSize: '14px', fontWeight: '600' }}>Version</span>
+                </div>
+                <span style={{ fontSize: '13px', color: '#888', fontWeight: '600' }}>1.0.0</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <Shield size={18} color="#4a90e2" />
+                  <span style={{ fontSize: '14px', fontWeight: '600' }}>Account</span>
+                </div>
+                <span style={{ fontSize: '13px', color: '#4ade80', fontWeight: '600' }}>Active</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Sign Out */}
+          <button 
+            className="glass-button danger" 
+            style={{ padding: '16px', fontSize: '15px', fontWeight: '700', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', borderRadius: '20px' }}
+            onClick={() => { supabase.auth.signOut(); setSession(null); }}
+          >
+            <LogOut size={18} /> Sign Out
+          </button>
+        </div>
+      );
+    }
   };
 
-  const navItems = [
+   const navItems = [
     { id: 'RIDE', icon: Navigation, label: 'RIDE' },
     { id: 'ROUTES', icon: MapIcon, label: 'ROUTES' },
     { id: 'RADIO', icon: Headset, label: 'RADIO' },
-    { id: 'STATS', icon: Activity, label: 'STATS' },
-    { id: 'GARAGE', icon: User, label: 'GARAGE' }
+    { id: 'GARAGE', icon: Bike, label: 'GARAGE' },
+    { id: 'SETTINGS', icon: Settings, label: 'SETTINGS' }
   ];
 
   return (
