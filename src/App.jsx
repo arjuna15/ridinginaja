@@ -474,9 +474,10 @@ function App() {
   };
 
   const getShareStyles = () => {
+    // 1. CLASSIC — Bottom gradient, horizontal 3-col stats
     if (shareTheme === 'CLASSIC') {
       return {
-        wrapper: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: '40px 20px', background: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.8) 50%, rgba(0,0,0,0) 100%)', zIndex: 50 },
+        wrapper: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: '40px 20px', background: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.8) 50%, transparent 100%)', zIndex: 50 },
         title: { fontSize: '28px', fontWeight: 'bold', color: '#fff', marginBottom: '4px' },
         date: { fontSize: '14px', color: '#aaa', marginBottom: '24px' },
         statRow: { display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.2)', paddingTop: '16px' },
@@ -484,19 +485,21 @@ function App() {
         statLbl: { fontSize: '12px', color: '#888', textTransform: 'uppercase' }
       };
     }
+    // 2. NEON — Grid border box, scanline feel
     if (shareTheme === 'NEON') {
       return {
         wrapper: { position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, background: '#000', padding: '40px 20px', zIndex: 50, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' },
-        title: { fontSize: '32px', fontWeight: '900', color: '#0f0', textShadow: '0 0 10px #0f0', marginBottom: '4px' },
-        date: { fontSize: '14px', color: '#0a0', marginBottom: '40px' },
-        statRow: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', background: 'rgba(0,255,0,0.05)', padding: '20px', borderRadius: '12px', border: '1px solid #0f0' },
-        statVal: { fontSize: '22px', fontWeight: 'bold', color: '#0f0', textShadow: '0 0 5px #0f0' },
-        statLbl: { fontSize: '11px', color: '#0a0', textTransform: 'uppercase' }
+        title: { fontSize: '32px', fontWeight: '900', color: '#0f0', textShadow: '0 0 10px #0f0', marginBottom: '4px', fontFamily: 'monospace' },
+        date: { fontSize: '14px', color: '#0a0', marginBottom: '40px', fontFamily: 'monospace' },
+        statRow: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', background: 'rgba(0,255,0,0.05)', padding: '20px', borderRadius: '4px', border: '1px solid #0f0', boxShadow: '0 0 20px rgba(0,255,0,0.1), inset 0 0 20px rgba(0,255,0,0.05)' },
+        statVal: { fontSize: '22px', fontWeight: 'bold', color: '#0f0', textShadow: '0 0 8px #0f0', fontFamily: 'monospace' },
+        statLbl: { fontSize: '10px', color: '#0a0', textTransform: 'uppercase', fontFamily: 'monospace', letterSpacing: '2px' }
       };
     }
+    // 3. MINIMAL — Floating white card, top position
     if (shareTheme === 'MINIMAL') {
       return {
-        wrapper: { position: 'absolute', top: '40px', left: '20px', right: '20px', background: 'rgba(255,255,255,0.95)', padding: '24px', borderRadius: '24px', boxShadow: '0 20px 40px rgba(0,0,0,0.5)' },
+        wrapper: { position: 'absolute', top: '40px', left: '20px', right: '20px', background: 'rgba(255,255,255,0.95)', padding: '24px', borderRadius: '24px', boxShadow: '0 20px 40px rgba(0,0,0,0.5)', zIndex: 50 },
         title: { fontSize: '24px', fontWeight: '800', color: '#000', marginBottom: '4px' },
         date: { fontSize: '12px', color: '#666', marginBottom: '20px' },
         statRow: { display: 'flex', justifyContent: 'space-between' },
@@ -504,67 +507,73 @@ function App() {
         statLbl: { fontSize: '10px', color: '#888', textTransform: 'uppercase', fontWeight: '600' }
       };
     }
+    // 4. SUNSET — Hero big number (distance) style, warm bottom gradient
     if (shareTheme === 'SUNSET') {
       return {
-        wrapper: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: '40px 20px', background: 'linear-gradient(to top, rgba(30,10,0,1) 0%, rgba(80,20,0,0.7) 50%, transparent 100%)', zIndex: 50 },
-        title: { fontSize: '28px', fontWeight: '900', color: '#ff6b35', marginBottom: '4px' },
-        date: { fontSize: '14px', color: '#ffb088', marginBottom: '24px' },
-        statRow: { display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(255,107,53,0.3)', paddingTop: '16px' },
-        statVal: { fontSize: '24px', fontWeight: 'bold', color: '#fff' },
-        statLbl: { fontSize: '12px', color: '#ffb088', textTransform: 'uppercase' }
+        wrapper: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: '48px 28px', background: 'linear-gradient(to top, rgba(120,30,0,0.95) 0%, rgba(80,20,0,0.7) 40%, transparent 100%)', zIndex: 50 },
+        title: { fontSize: '14px', fontWeight: '700', color: '#ffb088', textTransform: 'uppercase', letterSpacing: '4px', marginBottom: '8px' },
+        date: { display: 'none' },
+        statRow: { display: 'flex', flexDirection: 'column', gap: '4px' },
+        statVal: { fontSize: '52px', fontWeight: '900', color: '#fff', lineHeight: '1.1' },
+        statLbl: { fontSize: '11px', color: '#ffb088', textTransform: 'uppercase', letterSpacing: '3px', marginBottom: '12px' }
       };
     }
+    // 5. MIDNIGHT — Centered glass pill container
     if (shareTheme === 'MIDNIGHT') {
       return {
-        wrapper: { position: 'absolute', top: '8%', left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', color: '#fff', zIndex: 50 },
+        wrapper: { position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: 'rgba(15,10,46,0.85)', backdropFilter: 'blur(20px)', padding: '40px 48px', borderRadius: '32px', border: '1px solid rgba(129,140,248,0.2)', boxShadow: '0 30px 60px rgba(0,0,0,0.5), 0 0 80px rgba(129,140,248,0.1)', zIndex: 50, display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' },
         title: { display: 'none' },
         date: { display: 'none' },
-        statRow: { display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center', textAlign: 'center' },
-        statVal: { fontSize: '44px', fontWeight: '900', color: '#c7d2fe', textShadow: '0 0 30px rgba(129,140,248,0.6)' },
-        statLbl: { fontSize: '12px', color: '#818cf8', textTransform: 'uppercase', letterSpacing: '2px', marginTop: '2px' }
+        statRow: { display: 'flex', flexDirection: 'column', gap: '28px', alignItems: 'center' },
+        statVal: { fontSize: '40px', fontWeight: '900', color: '#c7d2fe', textShadow: '0 0 30px rgba(129,140,248,0.6)' },
+        statLbl: { fontSize: '11px', color: '#818cf8', textTransform: 'uppercase', letterSpacing: '4px', marginTop: '4px' }
       };
     }
+    // 6. CARBON — Industrial horizontal bar at bottom
     if (shareTheme === 'CARBON') {
       return {
-        wrapper: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: '40px 24px', background: 'linear-gradient(to top, #18181b 0%, rgba(24,24,27,0.9) 60%, transparent 100%)', zIndex: 50 },
-        title: { fontSize: '24px', fontWeight: '900', color: '#e4e4e7', letterSpacing: '3px', textTransform: 'uppercase', marginBottom: '4px' },
-        date: { fontSize: '12px', color: '#71717a', marginBottom: '24px', letterSpacing: '1px' },
-        statRow: { display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(228,228,231,0.1)', paddingTop: '16px' },
-        statVal: { fontSize: '22px', fontWeight: '900', color: '#e4e4e7', letterSpacing: '1px' },
-        statLbl: { fontSize: '10px', color: '#52525b', textTransform: 'uppercase', letterSpacing: '2px', fontWeight: '700' }
+        wrapper: { position: 'absolute', bottom: '40px', left: '16px', right: '16px', background: 'rgba(24,24,27,0.92)', backdropFilter: 'blur(16px)', padding: '20px 24px', borderRadius: '16px', border: '1px solid rgba(228,228,231,0.08)', zIndex: 50, boxShadow: '0 20px 40px rgba(0,0,0,0.6)' },
+        title: { display: 'none' },
+        date: { display: 'none' },
+        statRow: { display: 'flex', justifyContent: 'space-around', alignItems: 'center' },
+        statVal: { fontSize: '28px', fontWeight: '900', color: '#e4e4e7', letterSpacing: '-1px', fontFamily: '"Outfit", monospace' },
+        statLbl: { fontSize: '9px', color: '#52525b', textTransform: 'uppercase', letterSpacing: '3px', fontWeight: '700', marginTop: '4px' }
       };
     }
+    // 7. RETRO — Boxed sections with decorative borders, left-aligned
     if (shareTheme === 'RETRO') {
       return {
-        wrapper: { position: 'absolute', top: '8%', left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', color: '#fbbf24', zIndex: 50 },
+        wrapper: { position: 'absolute', top: '10%', left: '24px', zIndex: 50, display: 'flex', flexDirection: 'column', gap: '0' },
         title: { display: 'none' },
         date: { display: 'none' },
-        statRow: { display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center', textAlign: 'center' },
-        statVal: { fontSize: '44px', fontWeight: '900', color: '#fbbf24', textShadow: '0 0 20px rgba(251,191,36,0.4)', fontFamily: '"Outfit", monospace' },
-        statLbl: { fontSize: '12px', color: '#a16207', textTransform: 'uppercase', letterSpacing: '3px', marginTop: '2px' }
+        statRow: { display: 'flex', flexDirection: 'column', gap: '0' },
+        statVal: { fontSize: '48px', fontWeight: '900', color: '#fbbf24', textShadow: '0 0 20px rgba(251,191,36,0.3)', borderLeft: '4px solid #fbbf24', paddingLeft: '16px', lineHeight: '1.2' },
+        statLbl: { fontSize: '11px', color: '#a16207', textTransform: 'uppercase', letterSpacing: '4px', paddingLeft: '20px', marginBottom: '20px' }
       };
     }
+    // 8. FROST — Right-aligned, stacked with thin line separators
     if (shareTheme === 'FROST') {
       return {
-        wrapper: { position: 'absolute', top: '8%', left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', color: '#fff', zIndex: 50 },
+        wrapper: { position: 'absolute', top: '12%', right: '24px', zIndex: 50, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', textAlign: 'right' },
         title: { display: 'none' },
         date: { display: 'none' },
-        statRow: { display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center', textAlign: 'center' },
-        statVal: { fontSize: '44px', fontWeight: '900', color: '#e0f2fe', textShadow: '0 0 25px rgba(6,182,212,0.5)' },
-        statLbl: { fontSize: '12px', color: '#06b6d4', textTransform: 'uppercase', letterSpacing: '2px', marginTop: '2px' }
+        statRow: { display: 'flex', flexDirection: 'column', gap: '0', alignItems: 'flex-end' },
+        statVal: { fontSize: '42px', fontWeight: '900', color: '#e0f2fe', textShadow: '0 0 25px rgba(6,182,212,0.4)', lineHeight: '1.2' },
+        statLbl: { fontSize: '10px', color: '#06b6d4', textTransform: 'uppercase', letterSpacing: '3px', marginBottom: '16px', borderBottom: '1px solid rgba(6,182,212,0.3)', paddingBottom: '12px' }
       };
     }
+    // 9. LAVA — Centered with glowing horizontal divider lines
     if (shareTheme === 'LAVA') {
       return {
         wrapper: { position: 'absolute', top: '8%', left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', color: '#fff', zIndex: 50 },
         title: { display: 'none' },
         date: { display: 'none' },
-        statRow: { display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center', textAlign: 'center' },
-        statVal: { fontSize: '44px', fontWeight: '900', color: '#fca5a5', textShadow: '0 0 30px rgba(239,68,68,0.6)' },
-        statLbl: { fontSize: '12px', color: '#ef4444', textTransform: 'uppercase', letterSpacing: '2px', marginTop: '2px' }
+        statRow: { display: 'flex', flexDirection: 'column', gap: '0', alignItems: 'center', textAlign: 'center' },
+        statVal: { fontSize: '44px', fontWeight: '900', color: '#fca5a5', textShadow: '0 0 30px rgba(239,68,68,0.6)', paddingTop: '16px' },
+        statLbl: { fontSize: '11px', color: '#ef4444', textTransform: 'uppercase', letterSpacing: '3px', marginTop: '4px', paddingBottom: '16px', borderBottom: '2px solid rgba(239,68,68,0.3)', width: '120px', textAlign: 'center' }
       };
     }
-    // Default to STRAVA_DARK
+    // Default: STRAVA_DARK / Pro — Centered vertical, clean
     return {
       wrapper: { position: 'absolute', top: '8%', left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', color: '#fff', zIndex: 50 },
       title: { display: 'none' },
