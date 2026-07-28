@@ -231,7 +231,7 @@ function App() {
         const bgColor = isTransparentBg ? null : (themeConfigs[shareTheme]?.bg || '#050505');
         const canvas = await html2canvas(shareContainerRef.current, {
         useCORS: true,
-        scale: 2,
+        scale: 2.77, // Renders exactly 1080x1920 Instagram Story HD Resolution
         backgroundColor: bgColor,
         logging: false
       });
@@ -1311,16 +1311,15 @@ function App() {
         ref={shareContainerRef} 
         style={{ 
           position: 'absolute', 
-          top: (shareMode && !isCapturing) ? '38%' : 0, 
-          left: 0, 
-          right: 0, 
+          top: shareMode ? '50%' : 0, 
+          left: shareMode ? '50%' : 0, 
+          right: shareMode ? 'auto' : 0, 
           bottom: shareMode ? 'auto' : 0, 
-          width: '100%',
-          aspectRatio: shareMode ? '9/16' : 'auto',
-          height: shareMode ? 'auto' : '100%',
+          width: shareMode ? '390px' : '100%',
+          height: shareMode ? '693px' : '100%',
           overflow: 'hidden', 
           background: isTransparentBg ? 'transparent' : (themeConfigs[shareTheme]?.bg || ((shareMode && shareTheme === 'NEON') ? '#000' : 'transparent')),
-          transform: (shareMode && !isCapturing) ? 'translateY(-50%) scale(0.65)' : 'none',
+          transform: (shareMode && !isCapturing) ? 'translate(-50%, -50%) scale(0.65)' : (shareMode ? 'translate(-50%, -50%)' : 'none'),
           transformOrigin: 'center center',
           transition: 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
           pointerEvents: shareMode ? 'none' : 'auto' // Prevent map dragging during share preview
