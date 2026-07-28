@@ -26,26 +26,24 @@ function MapBoundsFitter({ path, isShareMode, shareTheme }) {
   const map = useMap();
   useEffect(() => {
     if (path && path.length > 0) {
-      const bounds = L.latLngBounds(path);
+      // Force Leaflet to recalculate container size in case 'top' changed
+      const timer = setTimeout(() => {
+        map.invalidateSize();
+        const bounds = L.latLngBounds(path);
+        let pTL = [40, 40];
+        let pBR = [40, 40];
+        
+        if (isShareMode) {
+           pBR = [40, 100]; // General bottom padding
+        }
+        
+        map.fitBounds(bounds, { 
+          paddingTopLeft: pTL,
+          paddingBottomRight: pBR
+        });
+      }, 50);
       
-      const height = map.getContainer().clientHeight;
-      let pTL = [40, 40];
-      let pBR = [40, 40];
-      
-      if (isShareMode) {
-         pBR = [40, 100]; // General bottom padding
-         
-         if (shareTheme === 'STRAVA_DARK') {
-           // Push route perfectly into the bottom 50% of the screen
-           pTL = [40, height * 0.45]; 
-           pBR = [40, 40];
-         }
-      }
-      
-      map.fitBounds(bounds, { 
-        paddingTopLeft: pTL,
-        paddingBottomRight: pBR
-      });
+      return () => clearTimeout(timer);
     }
   }, [path, map, isShareMode, shareTheme]);
   return null;
@@ -790,7 +788,12 @@ function App() {
         
         {/* MAP LAYER */}
         {activeTab === 'RIDE' && session && (
-          <div className="map-background" style={{ opacity: 1, top: 0, bottom: 0, transition: 'all 0.4s' }}>
+          <div className="map-background" style={{ 
+            opacity: 1, 
+            position: 'absolute',
+            top: (shareMode && shareTheme === 'STRAVA_DARK') ? '40%' : 0, 
+            bottom: 0, left: 0, right: 0
+          }}>
             <MapContainer ref={mapRef} center={currentPosition} zoom={15} zoomControl={false} attributionControl={false} style={{ height: '100%', width: '100%', backgroundColor: (shareTheme === 'NEON' || shareTheme === 'STRAVA_DARK') ? 'transparent' : 'transparent' }}>
               {!(shareMode && (shareTheme === 'NEON' || shareTheme === 'STRAVA_DARK')) && (
                 <TileLayer
