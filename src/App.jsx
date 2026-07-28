@@ -440,6 +440,7 @@ function App() {
   };
 
   const joinRadio = async () => {
+    setInRadio(true);
     try {
       setRadioStatus("Connecting Microphone...");
       if (window.AudioContext || window.webkitAudioContext) {
@@ -1414,7 +1415,7 @@ function App() {
 
 
       {/* INTERACTIVE UI LAYER (Will NOT be captured by html2canvas) */}
-      <div className="content-layer" style={{ pointerEvents: shareMode ? 'none' : 'none' }}>
+      <div className="content-layer" style={{ pointerEvents: shareMode ? 'none' : 'auto' }}>
         
         {/* Hide Top Nav during Share Mode */}
         {!shareMode && (
