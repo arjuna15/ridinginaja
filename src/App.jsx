@@ -545,7 +545,7 @@ function App() {
         {!viewingRoute && !shareMode && (
           <div className="action-area">
             <div className={`btn-start ${isTracking ? 'recording' : ''}`} onClick={isTracking ? stopTracking : startTracking}>
-              <div className="btn-inner" style={{ color: isTracking ? '#ef4444' : '#000' }}>
+              <div className="btn-inner" style={{ color: '#000' }}>
                 {isTracking ? <Square size={28} fill="currentColor" /> : <Play size={32} fill="currentColor" style={{ marginLeft: '4px' }} />}
               </div>
             </div>

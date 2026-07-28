@@ -84,33 +84,41 @@ body {
   pointer-events: auto;
 }
 
-/* Glassmorphism System */
+/* Glassmorphism System - 10/10 Premium Liquid Glass */
 .glass-panel {
-  background: var(--glass-bg);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--glass-border);
-  border-radius: 24px;
-  box-shadow: var(--glass-shadow);
-  animation: slideUpFade 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.01) 100%);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  border-left: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 32px;
+  box-shadow: 
+    0 20px 50px -10px rgba(0,0,0,0.5),
+    inset 0 1px 1px rgba(255, 255, 255, 0.15);
+  animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .glass-card {
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.05);
-  border-radius: 20px;
-  padding: 16px;
-  transition: all 0.3s ease;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
+  backdrop-filter: blur(16px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  padding: 20px;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 10px 30px -10px rgba(0,0,0,0.4);
 }
 .glass-card:active {
-  transform: scale(0.98);
-  background: rgba(255,255,255,0.08);
+  transform: scale(0.96);
+  background: rgba(255,255,255,0.06);
 }
 
 .glass-button {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(12px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
   color: #fff;
   border-radius: 100px;
   cursor: pointer;
@@ -118,29 +126,47 @@ body {
   align-items: center;
   justify-content: center;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  box-shadow: 
+    0 6px 20px -5px rgba(0,0,0,0.3),
+    inset 0 1px 1px rgba(255, 255, 255, 0.1);
+}
+
+.glass-button:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-2px);
+  box-shadow: 
+    0 10px 25px -5px rgba(0,0,0,0.4),
+    inset 0 1px 1px rgba(255, 255, 255, 0.2);
 }
 
 .glass-button:active {
   transform: scale(0.95);
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .glass-button.primary {
-  background: linear-gradient(135deg, var(--primary) 0%, #2b5b94 100%);
-  border: none;
-  box-shadow: 0 4px 15px var(--primary-glow);
+  background: linear-gradient(135deg, rgba(74, 144, 226, 0.85) 0%, rgba(43, 91, 148, 0.85) 100%);
+  border: 1px solid rgba(74, 144, 226, 0.3);
+  border-top: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 
+    0 12px 30px rgba(74, 144, 226, 0.4),
+    inset 0 1px 2px rgba(255, 255, 255, 0.5);
 }
 
 .glass-button.primary:active {
   transform: scale(0.95);
-  box-shadow: 0 2px 8px var(--primary-glow);
+  box-shadow: 0 4px 12px rgba(74, 144, 226, 0.5);
 }
 
 .glass-button.danger {
-  background: linear-gradient(135deg, #ef4444 0%, #991b1b 100%);
-  border: none;
-  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.85) 0%, rgba(153, 27, 27, 0.85) 100%);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-top: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 
+    0 12px 30px rgba(239, 68, 68, 0.4),
+    inset 0 1px 2px rgba(255, 255, 255, 0.5);
 }
 
 .glass-input {
@@ -212,9 +238,11 @@ body {
   display: flex;
   justify-content: space-around;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
-  border-top-left-radius: 36px;
-  border-top-right-radius: 36px;
-  box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
+  border-top-left-radius: 40px;
+  border-top-right-radius: 40px;
+  box-shadow: 
+    0 -15px 40px rgba(0,0,0,0.6),
+    inset 0 1px 1px rgba(255, 255, 255, 0.1);
   z-index: 50;
 }
 
@@ -233,7 +261,9 @@ body {
 .nav-item.active {
   color: var(--primary);
   transform: translateY(-6px);
-  background: rgba(74, 144, 226, 0.1);
+  background: rgba(74, 144, 226, 0.15);
+  box-shadow: 0 4px 15px rgba(74, 144, 226, 0.2);
+  border: 1px solid rgba(74, 144, 226, 0.2);
 }
 
 .nav-label {
@@ -293,39 +323,54 @@ body {
 }
 
 .btn-start {
-  width: 88px;
-  height: 88px;
+  width: 90px;
+  height: 90px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(12px);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  box-shadow: 
+    0 15px 35px -5px rgba(0,0,0,0.5),
+    inset 0 1px 1px rgba(255, 255, 255, 0.2);
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .btn-start:active {
-  transform: scale(0.85);
+  transform: scale(0.9);
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .btn-start.recording {
-  border-color: rgba(239, 68, 68, 0.4);
-  box-shadow: 0 0 30px rgba(239, 68, 68, 0.3);
+  border-color: rgba(239, 68, 68, 0.5);
+  box-shadow: 
+    0 10px 40px rgba(239, 68, 68, 0.4),
+    inset 0 1px 2px rgba(239, 68, 68, 0.6);
+  animation: pulseGlowRed 2s infinite;
 }
 
 .btn-inner {
-  width: 68px;
-  height: 68px;
+  width: 66px;
+  height: 66px;
   border-radius: 50%;
-  background: #fff;
+  background: linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(255,255,255,0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 
+    0 5px 15px rgba(0,0,0,0.2),
+    inset 0 -2px 5px rgba(0,0,0,0.1);
+}
+
+.btn-start.recording .btn-inner {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ef4444 100%) !important;
+  color: #fff !important;
 }
 
 .profile-pic {
