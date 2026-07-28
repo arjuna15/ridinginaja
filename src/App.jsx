@@ -35,7 +35,7 @@ function MapBoundsFitter({ path, isShareMode, shareTheme }) {
         let pBR = [40, 40];
         
         if (isShareMode) {
-           pBR = [40, shareTheme === 'CLASSIC' ? 220 : 80]; // Padding above bottom stats card
+           pBR = [40, shareTheme === 'CLASSIC' ? 180 : 60]; // Padding above bottom stats card
         }
         
         map.fitBounds(bounds, { 
@@ -232,10 +232,11 @@ function App() {
 
     if (mapRef.current) {
       mapRef.current.invalidateSize({ animate: false });
-      if (viewingRoute && viewingRoute.route_path && viewingRoute.route_path.length > 0) {
-        mapRef.current.fitBounds(L.latLngBounds(viewingRoute.route_path), {
-          paddingTopLeft: [40, 60],
-          paddingBottomRight: [40, shareTheme === 'CLASSIC' ? 220 : 80],
+      const targetPath = viewingRoute?.route_path || routePath;
+      if (targetPath && targetPath.length > 0) {
+        mapRef.current.fitBounds(L.latLngBounds(targetPath), {
+          paddingTopLeft: [40, 40],
+          paddingBottomRight: [40, shareTheme === 'CLASSIC' ? 180 : 60],
           animate: false
         });
       }
@@ -1362,7 +1363,7 @@ function App() {
                 )}
                 {viewingRoute && viewingRoute.route_path && <MapBoundsFitter path={viewingRoute.route_path} isShareMode={shareMode} shareTheme={shareTheme} />}
                 <Polyline 
-                  positions={routePath} 
+                  positions={viewingRoute?.route_path || routePath} 
                   color={shareMode ? (themeConfigs[shareTheme]?.routeColor || '#4a90e2') : '#4a90e2'} 
                   weight={shareMode ? 6 : 4} 
                   opacity={1} 
