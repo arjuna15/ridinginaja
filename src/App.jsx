@@ -467,7 +467,7 @@ function App() {
     }
     if (shareTheme === 'MINIMAL') {
       return {
-        wrapper: { position: 'absolute', top: '40px', left: '20px', right: '20px', background: 'rgba(255,255,255,0.95)', padding: '24px', borderRadius: '24px', zIndex: 50, boxShadow: '0 20px 40px rgba(0,0,0,0.5)' },
+        wrapper: { ...shareWrapper, top: '40px', left: '20px', right: '20px', background: 'rgba(255,255,255,0.95)', padding: '24px', borderRadius: '24px', boxShadow: '0 20px 40px rgba(0,0,0,0.5)' },
         title: { fontSize: '24px', fontWeight: '800', color: '#000', marginBottom: '4px' },
         date: { fontSize: '12px', color: '#666', marginBottom: '20px' },
         statRow: { display: 'flex', justifyContent: 'space-between' },
@@ -477,12 +477,12 @@ function App() {
     }
     if (shareTheme === 'STRAVA_DARK') {
       return {
-        wrapper: { position: 'absolute', bottom: '120px', left: 0, right: 0, padding: '0 40px', zIndex: 50 },
-        title: { display: 'none' },
-        date: { display: 'none' },
-        statRow: { display: 'flex', justifyContent: 'space-between', borderTop: 'none', paddingTop: 0 },
-        statVal: { fontSize: '36px', fontWeight: '900', color: '#fff', textShadow: '0 2px 10px rgba(0,0,0,0.8)' },
-        statLbl: { fontSize: '12px', color: '#aaa', textTransform: 'uppercase', fontWeight: 'bold' }
+        wrapper: { ...shareWrapper, top: '100px', left: '40px', color: '#fff' },
+        title: { fontSize: '28px', fontWeight: '900', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '1px', textShadow: '0 4px 20px rgba(0,0,0,0.8)' },
+        date: { fontSize: '14px', color: '#fc4c02', marginBottom: '32px', fontWeight: 'bold', textShadow: '0 2px 10px rgba(0,0,0,0.8)' },
+        statRow: { display: 'flex', flexDirection: 'column', gap: '24px' },
+        statVal: { fontSize: '36px', fontWeight: '900', textShadow: '0 4px 20px rgba(0,0,0,0.8)' },
+        statLbl: { fontSize: '12px', color: '#aaa', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '2px', textShadow: '0 2px 10px rgba(0,0,0,0.8)' }
       };
     }
   };
@@ -755,14 +755,17 @@ function App() {
         ref={shareContainerRef} 
         style={{ 
           position: 'absolute', 
-          top: 0, 
+          top: shareMode ? '50%' : 0, 
           left: 0, 
-          right: 0, 
-          bottom: 0, 
+          right: shareMode ? 'auto' : 0, 
+          bottom: shareMode ? 'auto' : 0, 
+          width: '100%',
+          aspectRatio: shareMode ? '9/16' : 'auto',
+          height: shareMode ? 'auto' : '100%',
           overflow: 'hidden', 
           background: (shareTheme === 'NEON' || shareTheme === 'STRAVA_DARK') ? '#000' : 'transparent',
-          transform: (shareMode && !isCapturing) ? 'scale(0.8) translateY(-5%)' : 'none',
-          transformOrigin: 'top center',
+          transform: (shareMode && !isCapturing) ? 'translateY(-50%) scale(0.75)' : (shareMode && isCapturing ? 'translateY(-50%) scale(1)' : 'none'),
+          transformOrigin: 'center center',
           transition: 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
           pointerEvents: shareMode ? 'none' : 'auto' // Prevent map dragging during share preview
         }}
