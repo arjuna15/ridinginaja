@@ -111,6 +111,7 @@ function App() {
 
   // Radio State
   const [inRadio, setInRadio] = useState(false);
+  const [radioStatus, setRadioStatus] = useState("Offline");
   const [radioPeers, setRadioPeers] = useState([]);
   const [isMuted, setIsMuted] = useState(false);
   const localStreamRef = useRef(null);
@@ -377,14 +378,38 @@ function App() {
     }
   };
 
+  const testAudioSound = () => {
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtx) {
+        const ctx = new AudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5 note
+        gain.gain.setValueAtTime(0.1, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.5);
+        alert("🔊 Suara audio test berhasil diputar! Jika kamu mendengarnya, speaker HP kamu 100% aktif.");
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Gagal memutar audio test.");
+    }
+  };
+
   const joinRadio = async () => {
     try {
-      // 1. AudioContext unlock for iOS Safari & Android Chrome
+      setRadioStatus("Connecting Microphone...");
+      // 1. AudioContext unlock
       if (window.AudioContext || window.webkitAudioContext) {
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
         const tempCtx = new AudioCtx();
         if (tempCtx.state === 'suspended') {
-          tempCtx.resume();
+          await tempCtx.resume();
         }
       }
 
@@ -397,12 +422,13 @@ function App() {
         } 
       });
       
-      // Ensure audio tracks are enabled
       stream.getAudioTracks().forEach(track => { track.enabled = true; });
       localStreamRef.current = stream;
       setIsMuted(false);
       
-      // 3. Initialize PeerJS with STUN servers for NAT traversal across 4G/5G/WiFi
+      setRadioStatus("Connecting to Peer Server...");
+
+      // 3. Initialize PeerJS with multiple public STUN servers for NAT traversal
       const peer = new Peer({
         config: {
           iceServers: [
@@ -423,10 +449,27 @@ function App() {
       
       peer.on('open', (id) => {
         setInRadio(true);
+        setRadioStatus("Online in Intercom Room");
+
         const channel = supabase.channel('radio_room', {
           config: { presence: { key: session.user.id } }
         });
         radioChannelRef.current = channel;
+
+        const connectToPeer = (targetPeerId, targetName) => {
+          if (!targetPeerId || targetPeerId === id) return;
+          if (!callsRef.current[targetPeerId]) {
+            const call = peer.call(targetPeerId, stream);
+            if (call) setupCallEvents(call, targetName);
+          }
+        };
+
+        // Listen for Supabase Realtime Broadcast signaling
+        channel.on('broadcast', { event: 'rider_joined' }, (payload) => {
+          if (payload.payload && payload.payload.peerId !== id) {
+            connectToPeer(payload.payload.peerId, payload.payload.displayName);
+          }
+        });
 
         const syncPeers = () => {
           const state = channel.presenceState();
@@ -435,10 +478,8 @@ function App() {
             if (presenceList && presenceList[0]) {
               const presence = presenceList[0];
               if (presence.peerId && presence.peerId !== id) {
-                // Initiate call if not already connected and our ID is lexicographically greater
                 if (!callsRef.current[presence.peerId] && id > presence.peerId) {
-                  const call = peer.call(presence.peerId, stream);
-                  if (call) setupCallEvents(call, presence.displayName || presence.email || "Rider");
+                  connectToPeer(presence.peerId, presence.displayName || presence.email || "Rider");
                 }
               }
             }
@@ -450,18 +491,25 @@ function App() {
 
         channel.subscribe(async (status) => {
           if (status === 'SUBSCRIBED') {
-            await channel.track({ 
+            const riderInfo = { 
               user_id: session.user.id, 
               peerId: id, 
               email: session.user.email,
               displayName: displayName || session.user.email?.split('@')[0] || 'Rider'
+            };
+            await channel.track(riderInfo);
+            // Broadcast to active riders in channel
+            channel.send({
+              type: 'broadcast',
+              event: 'rider_joined',
+              payload: riderInfo
             });
           }
         });
       });
 
       peer.on('call', (call) => {
-        // Always answer with our local stream
+        // Always answer incoming call with our local stream
         call.answer(localStreamRef.current);
         const state = radioChannelRef.current?.presenceState() || {};
         let callerEmail = "Rider";
@@ -475,6 +523,7 @@ function App() {
 
     } catch (err) {
       console.error(err);
+      setRadioStatus("Failed to access Microphone");
       alert("Gagal mengakses mikrofon. Pastikan izin mic diberikan di browser.");
     }
   };
@@ -831,23 +880,34 @@ function App() {
     if (activeTab === 'RADIO') {
       return (
         <div className="glass-panel" style={{ flex: 1, padding: '24px', marginTop: '20px', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+          <div style={{ textAlign: 'center', marginBottom: '24px' }}>
              <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: inRadio ? 'rgba(74, 222, 128, 0.2)' : 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', boxShadow: inRadio ? '0 0 20px rgba(74, 222, 128, 0.4)' : 'none', transition: 'all 0.3s' }}>
                 <Headset size={40} color={inRadio ? '#4ade80' : '#888'} />
              </div>
              <h2 style={{ fontSize: '20px', fontWeight: 'bold' }}>Live Intercom</h2>
              <p style={{ color: '#888', fontSize: '13px', marginTop: '4px' }}>Ngobrol bareng teman pas riding, jarak tak terbatas.</p>
+             <div style={{ marginTop: '8px', fontSize: '12px', color: inRadio ? '#4ade80' : '#666', fontWeight: '700' }}>
+               ● {radioStatus}
+             </div>
           </div>
 
           {!inRadio ? (
-            <button className="glass-button primary" onClick={joinRadio} style={{ padding: '16px', fontSize: '16px', fontWeight: 'bold' }}>
-              Connect to Room
-            </button>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <button className="glass-button primary" onClick={joinRadio} style={{ padding: '16px', fontSize: '16px', fontWeight: 'bold' }}>
+                Connect to Room
+              </button>
+              <button className="glass-button" onClick={testAudioSound} style={{ padding: '12px', fontSize: '13px', background: 'rgba(255,255,255,0.05)' }}>
+                🔊 Test HP Speaker Sound
+              </button>
+            </div>
           ) : (
             <>
-              <div style={{ display: 'flex', gap: '12px', marginBottom: '32px' }}>
-                 <button className="glass-button" onClick={toggleMute} style={{ flex: 1, padding: '16px', background: isMuted ? 'rgba(239, 68, 68, 0.2)' : 'rgba(255,255,255,0.1)', color: isMuted ? '#ef4444' : '#fff' }}>
+              <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
+                 <button className="glass-button" onClick={toggleMute} style={{ flex: 1, padding: '16px', background: isMuted ? 'rgba(239, 68, 68, 0.2)' : 'rgba(74, 222, 128, 0.15)', color: isMuted ? '#ef4444' : '#4ade80', border: isMuted ? '1px solid rgba(239,68,68,0.4)' : '1px solid rgba(74,222,128,0.4)' }}>
                     {isMuted ? <MicOff size={24} style={{margin:'0 auto'}} /> : <Mic size={24} style={{margin:'0 auto'}} />}
+                 </button>
+                 <button className="glass-button" onClick={testAudioSound} style={{ padding: '16px', background: 'rgba(255,255,255,0.08)' }} title="Test Speaker">
+                    🔊
                  </button>
                  <button className="glass-button" onClick={leaveRadio} style={{ flex: 1, padding: '16px', background: '#ef4444', color: '#fff', border: 'none' }}>
                     <PhoneOff size={24} style={{margin:'0 auto'}} />
@@ -856,22 +916,28 @@ function App() {
 
               <h3 style={{ fontSize: '14px', color: '#888', marginBottom: '12px' }}>Active Riders ({radioPeers.length + 1})</h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                 <div style={{ background: 'rgba(74, 222, 128, 0.1)', border: '1px solid rgba(74, 222, 128, 0.3)', padding: '12px 16px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#4ade80', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#000', fontWeight: 'bold' }}>
-                       {session.user.email.substring(0,2).toUpperCase()}
-                    </div>
-                    <div>
-                       <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#4ade80' }}>You {isMuted && '(Muted)'}</div>
+                 <div style={{ background: 'rgba(74, 222, 128, 0.1)', border: '1px solid rgba(74, 222, 128, 0.3)', padding: '12px 16px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#4ade80', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#000', fontWeight: 'bold' }}>
+                         {(displayName?.trim()?.[0] || session.user.email.substring(0,1)).toUpperCase()}
+                      </div>
+                      <div>
+                         <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#4ade80' }}>{displayName || session.user.email.split('@')[0]} (You)</div>
+                         <div style={{ fontSize: '11px', color: isMuted ? '#ef4444' : '#4ade80' }}>{isMuted ? 'Mic Muted' : 'Mic Active 🎙️'}</div>
+                      </div>
                     </div>
                  </div>
 
                  {radioPeers.map(peer => (
-                   <div key={peer.id} style={{ background: 'rgba(255,255,255,0.05)', padding: '12px 16px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#4a90e2', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 'bold' }}>
-                         {peer.email.substring(0,2).toUpperCase()}
-                      </div>
-                      <div>
-                         <div style={{ fontSize: '14px', fontWeight: 'bold' }}>{peer.email.split('@')[0]}</div>
+                   <div key={peer.id} style={{ background: 'rgba(74, 144, 226, 0.1)', border: '1px solid rgba(74, 144, 226, 0.3)', padding: '12px 16px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#4a90e2', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 'bold' }}>
+                           {peer.email.substring(0,1).toUpperCase()}
+                        </div>
+                        <div>
+                           <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#fff' }}>{peer.email}</div>
+                           <div style={{ fontSize: '11px', color: '#4ade80' }}>● Connected (Voice Live)</div>
+                        </div>
                       </div>
                    </div>
                  ))}
