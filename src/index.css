@@ -368,9 +368,41 @@ body {
   border-radius: 10px;
 }
 
-/* Auth Screen Overlay */
-.auth-bg {
-  background-image: url('https://images.unsplash.com/photo-1558981806-ec527fa84c39?q=80&w=2070&auto=format&fit=crop');
-  background-size: cover;
-  background-position: center;
+/* New Premium Backgrounds */
+.grid-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-size: 30px 30px;
+  background-image: 
+    linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px);
+  pointer-events: none;
+  z-index: 0;
+  mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%);
+  -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%);
+}
+
+.glow-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+.glow-orb.top-left {
+  top: -100px;
+  left: -100px;
+  width: 300px;
+  height: 300px;
+  background: var(--primary);
+}
+
+.glow-orb.bottom-right {
+  bottom: -100px;
+  right: -100px;
+  width: 300px;
+  height: 300px;
+  background: #8e2de2;
 }

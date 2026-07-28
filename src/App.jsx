@@ -424,11 +424,14 @@ function App() {
 
   if (!session) {
     return (
-      <div className="app-container auth-bg" style={{ justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
-         <div className="app-container-overlay" style={{position:'absolute', top:0, left:0, right:0, bottom:0, background:'linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, rgba(5,5,5,1) 100%)', zIndex:0}}></div>
+      <div className="app-container" style={{ justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
+         <div className="grid-overlay"></div>
+         <div className="glow-orb top-left"></div>
+         <div className="glow-orb bottom-right"></div>
+         
          <div className="glass-panel" style={{ padding: '40px 32px', width: '100%', maxWidth: '400px', zIndex: 1, borderRadius: '32px' }}>
-            <h1 style={{ textAlign: 'center', marginBottom: '12px', fontSize: '28px', fontWeight: '900', letterSpacing: '-1px' }}>Mokat Touring</h1>
-            <p style={{ textAlign: 'center', color: '#aaa', marginBottom: '40px', fontSize: '15px' }}>Log in to access your cloud garage & routes.</p>
+            <h1 style={{ textAlign: 'center', marginBottom: '12px', fontSize: '32px', fontWeight: '900', letterSpacing: '-1px', background: 'linear-gradient(to right, #fff, #888)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Mokat Touring</h1>
+            <p style={{ textAlign: 'center', color: '#888', marginBottom: '40px', fontSize: '15px' }}>Log in to access your cloud garage & routes.</p>
             
             <form onSubmit={handleAuth} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                <input className="glass-input" type="email" placeholder="Email" value={authEmail} onChange={e => setAuthEmail(e.target.value)} required />
@@ -752,7 +755,7 @@ function App() {
   ];
 
   return (
-    <div className="app-container auth-bg" style={{ background: shareTheme === 'NEON' && shareMode ? '#000' : '' }}>
+    <div className="app-container" style={{ background: shareTheme === 'NEON' && shareMode ? '#000' : '' }}>
       
       {/* 
         This is the DOM node we will screenshot. 
