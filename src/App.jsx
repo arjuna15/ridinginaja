@@ -22,18 +22,25 @@ const bikeIcon = L.divIcon({
   iconAnchor: [8, 8]
 });
 
-function MapBoundsFitter({ path, isShareMode }) {
+function MapBoundsFitter({ path, isShareMode, shareTheme }) {
   const map = useMap();
   useEffect(() => {
     if (path && path.length > 0) {
       const bounds = L.latLngBounds(path);
-      // Auto-center the route perfectly, especially when entering share mode
+      let pTL = [40, 40];
+      let pBR = [40, 160];
+      
+      if (isShareMode && shareTheme === 'STRAVA_DARK') {
+         pTL = [40, 350]; // Push route down
+         pBR = [40, 40];
+      }
+      
       map.fitBounds(bounds, { 
-        paddingTopLeft: [40, 40],
-        paddingBottomRight: [40, 160] // Extra padding at bottom to account for stats UI
+        paddingTopLeft: pTL,
+        paddingBottomRight: pBR
       });
     }
-  }, [path, map, isShareMode]);
+  }, [path, map, isShareMode, shareTheme]);
   return null;
 }
 
@@ -169,11 +176,11 @@ function App() {
     setTimeout(async () => {
       try {
         const canvas = await html2canvas(shareContainerRef.current, {
-          useCORS: true,
-          allowTaint: true,
-          backgroundColor: shareTheme === 'NEON' ? '#000000' : '#050505',
-          scale: 2 
-        });
+        useCORS: true,
+        scale: 2,
+        backgroundColor: shareTheme === 'STRAVA_DARK' ? null : (shareTheme === 'NEON' ? '#000' : '#050505'),
+        logging: false
+      });
         
         const image = canvas.toDataURL("image/png");
         
@@ -477,12 +484,12 @@ function App() {
     }
     if (shareTheme === 'STRAVA_DARK') {
       return {
-        wrapper: { position: 'absolute', top: '100px', left: '40px', color: '#fff', zIndex: 50 },
-        title: { fontSize: '28px', fontWeight: '900', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '1px', textShadow: '0 4px 20px rgba(0,0,0,0.8)' },
-        date: { fontSize: '14px', color: '#fc4c02', marginBottom: '32px', fontWeight: 'bold', textShadow: '0 2px 10px rgba(0,0,0,0.8)' },
-        statRow: { display: 'flex', flexDirection: 'column', gap: '24px' },
-        statVal: { fontSize: '36px', fontWeight: '900', textShadow: '0 4px 20px rgba(0,0,0,0.8)' },
-        statLbl: { fontSize: '12px', color: '#aaa', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '2px', textShadow: '0 2px 10px rgba(0,0,0,0.8)' }
+        wrapper: { position: 'absolute', top: '15%', left: 0, right: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', color: '#fff', zIndex: 50 },
+        title: { display: 'none' },
+        date: { display: 'none' },
+        statRow: { display: 'flex', flexDirection: 'column', gap: '24px', alignItems: 'center', textAlign: 'center' },
+        statVal: { fontSize: '48px', fontWeight: '900', textShadow: '0 4px 20px rgba(0,0,0,0.8)' },
+        statLbl: { fontSize: '14px', color: '#aaa', textTransform: 'uppercase', letterSpacing: '2px', marginTop: '2px', textShadow: '0 2px 10px rgba(0,0,0,0.8)' }
       };
     }
   };
@@ -763,7 +770,7 @@ function App() {
           aspectRatio: shareMode ? '9/16' : 'auto',
           height: shareMode ? 'auto' : '100%',
           overflow: 'hidden', 
-          background: (shareTheme === 'NEON' || shareTheme === 'STRAVA_DARK') ? '#000' : 'transparent',
+          background: (shareTheme === 'NEON') ? '#000' : 'transparent',
           transform: (shareMode && !isCapturing) ? 'translateY(-50%) scale(0.75)' : (shareMode && isCapturing ? 'translateY(-50%) scale(1)' : 'none'),
           transformOrigin: 'center center',
           transition: 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
@@ -774,7 +781,7 @@ function App() {
         {/* MAP LAYER */}
         {activeTab === 'RIDE' && session && (
           <div className="map-background" style={{ opacity: 1 }}>
-            <MapContainer ref={mapRef} center={currentPosition} zoom={15} zoomControl={false} attributionControl={false} style={{ height: '100%', width: '100%', backgroundColor: (shareTheme === 'NEON' || shareTheme === 'STRAVA_DARK') ? '#000' : '#050505' }}>
+            <MapContainer ref={mapRef} center={currentPosition} zoom={15} zoomControl={false} attributionControl={false} style={{ height: '100%', width: '100%', backgroundColor: (shareTheme === 'NEON') ? '#000' : 'transparent' }}>
               {!(shareMode && (shareTheme === 'NEON' || shareTheme === 'STRAVA_DARK')) && (
                 <TileLayer
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -782,7 +789,7 @@ function App() {
                   className="dark-map-tiles"
                 />
               )}
-              {viewingRoute && viewingRoute.route_path && <MapBoundsFitter path={viewingRoute.route_path} isShareMode={shareMode} />}
+              {viewingRoute && viewingRoute.route_path && <MapBoundsFitter path={viewingRoute.route_path} isShareMode={shareMode} shareTheme={shareTheme} />}
               <Polyline 
                 positions={routePath} 
                 color={shareMode && shareTheme === 'NEON' ? '#0f0' : (shareMode && shareTheme === 'STRAVA_DARK' ? '#fc4c02' : '#4a90e2')} 
@@ -809,11 +816,11 @@ function App() {
              
              <div style={getShareStyles().statRow}>
                 <div>
-                   <div style={getShareStyles().statVal}>{Number(viewingRoute.distance).toFixed(1)} km</div>
+                   <div style={getShareStyles().statVal}>{Number(viewingRoute.distance).toFixed(1)} <span style={{fontSize:'0.5em', fontWeight:'normal'}}>km</span></div>
                    <div style={getShareStyles().statLbl}>Distance</div>
                 </div>
                 <div>
-                   <div style={getShareStyles().statVal}>{Math.round(viewingRoute.avg_speed)} km/h</div>
+                   <div style={getShareStyles().statVal}>{Math.round(viewingRoute.avg_speed)} <span style={{fontSize:'0.5em', fontWeight:'normal'}}>km/h</span></div>
                    <div style={getShareStyles().statLbl}>Avg Speed</div>
                 </div>
                 <div>
