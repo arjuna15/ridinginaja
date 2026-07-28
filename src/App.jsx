@@ -230,42 +230,28 @@ function App() {
     if (!shareContainerRef.current) return;
     setIsCapturing(true);
 
-    if (mapRef.current) {
-      mapRef.current.invalidateSize({ animate: false });
-      const targetPath = viewingRoute?.route_path || routePath;
-      if (targetPath && targetPath.length > 0) {
-        mapRef.current.fitBounds(L.latLngBounds(targetPath), {
-          paddingTopLeft: [40, 40],
-          paddingBottomRight: [40, shareTheme === 'CLASSIC' ? 180 : 60],
-          animate: false
-        });
-      }
-    }
-    
-    setTimeout(async () => {
-      try {
-        const bgColor = isTransparentBg ? null : (themeConfigs[shareTheme]?.bg || '#050505');
-        const canvas = await html2canvas(shareContainerRef.current, {
+    try {
+      const bgColor = isTransparentBg ? null : (themeConfigs[shareTheme]?.bg || '#050505');
+      const canvas = await html2canvas(shareContainerRef.current, {
         useCORS: true,
         scale: 2.77, // Renders exactly 1080x1920 Instagram Story HD Resolution
         backgroundColor: bgColor,
         logging: false
       });
-        
-        const image = canvas.toDataURL("image/png");
-        
-        const a = document.createElement('a');
-        a.href = image;
-        a.download = `mokat-story-${shareTheme.toLowerCase()}-${new Date().getTime()}.png`;
-        a.click();
-        
-      } catch (err) {
-        console.error("Failed to generate image:", err);
-        alert("Gagal memproses gambar. Pastikan peta sudah selesai loading.");
-      } finally {
-        setIsCapturing(false);
-      }
-    }, 500);
+      
+      const image = canvas.toDataURL("image/png");
+      
+      const a = document.createElement('a');
+      a.href = image;
+      a.download = `mokat-story-${shareTheme.toLowerCase()}-${new Date().getTime()}.png`;
+      a.click();
+      
+    } catch (err) {
+      console.error("Failed to generate image:", err);
+      alert("Gagal memproses gambar.");
+    } finally {
+      setIsCapturing(false);
+    }
   };
 
   const startTracking = () => {
@@ -1328,7 +1314,7 @@ function App() {
         justifyContent: 'center',
         pointerEvents: 'none',
         zIndex: shareMode ? 50 : 1,
-        transform: (shareMode && !isCapturing) ? 'translateY(-12%) scale(0.55)' : 'none',
+        transform: shareMode ? 'translateY(-12%) scale(0.55)' : 'none',
         transition: 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
       }}>
         <div 
