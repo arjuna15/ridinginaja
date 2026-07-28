@@ -354,11 +354,26 @@ function App() {
 
   const joinRadio = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // 1. Enhanced WebRTC audio constraints for mobile & desktop
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: { 
+          echoCancellation: true, 
+          noiseSuppression: true, 
+          autoGainControl: true 
+        } 
+      });
+      
+      // Ensure audio track is enabled
+      stream.getAudioTracks().forEach(track => { track.enabled = true; });
       localStreamRef.current = stream;
+      setIsMuted(false);
       
       const peer = new Peer();
       peerInstanceRef.current = peer;
+
+      peer.on('error', (err) => {
+        console.warn("PeerJS error:", err);
+      });
       
       peer.on('open', (id) => {
         setInRadio(true);
@@ -367,33 +382,47 @@ function App() {
         });
         radioChannelRef.current = channel;
 
-        channel.on('presence', { event: 'sync' }, () => {
+        const syncPeers = () => {
           const state = channel.presenceState();
           for (const key in state) {
-            const presence = state[key][0];
-            if (presence.peerId && presence.peerId !== id) {
-              // Lowest peer ID initiates the call to avoid duplicate connections
-              if (!callsRef.current[presence.peerId] && id > presence.peerId) {
-                const call = peer.call(presence.peerId, stream);
-                setupCallEvents(call, presence.email);
+            const presenceList = state[key];
+            if (presenceList && presenceList[0]) {
+              const presence = presenceList[0];
+              if (presence.peerId && presence.peerId !== id) {
+                // Initiate call if not already connected and our ID is lexicographically greater
+                if (!callsRef.current[presence.peerId] && id > presence.peerId) {
+                  const call = peer.call(presence.peerId, stream);
+                  if (call) setupCallEvents(call, presence.email || presence.displayName || "Rider");
+                }
               }
             }
           }
-        });
+        };
+
+        channel.on('presence', { event: 'sync' }, syncPeers);
+        channel.on('presence', { event: 'join' }, syncPeers);
 
         channel.subscribe(async (status) => {
           if (status === 'SUBSCRIBED') {
-            await channel.track({ user_id: session.user.id, peerId: id, email: session.user.email });
+            await channel.track({ 
+              user_id: session.user.id, 
+              peerId: id, 
+              email: session.user.email,
+              displayName: displayName || session.user.email?.split('@')[0] || 'Rider'
+            });
           }
         });
       });
 
       peer.on('call', (call) => {
+        // Always answer with our local stream
         call.answer(localStreamRef.current);
         const state = radioChannelRef.current?.presenceState() || {};
         let callerEmail = "Rider";
         for (const key in state) {
-          if (state[key][0].peerId === call.peer) callerEmail = state[key][0].email;
+          if (state[key][0]?.peerId === call.peer) {
+            callerEmail = state[key][0].displayName || state[key][0].email || "Rider";
+          }
         }
         setupCallEvents(call, callerEmail);
       });
@@ -408,12 +437,35 @@ function App() {
     callsRef.current[call.peer] = call;
     
     call.on('stream', (remoteStream) => {
-      if (document.getElementById(`audio-${call.peer}`)) return; // Already exists
-      const audio = document.createElement('audio');
+      let audio = document.getElementById(`audio-${call.peer}`);
+      if (!audio) {
+        audio = document.createElement('audio');
+        audio.id = `audio-${call.peer}`;
+        audio.style.display = 'none';
+        document.body.appendChild(audio);
+      }
+      
       audio.srcObject = remoteStream;
+      audio.setAttribute('playsinline', 'true');
+      audio.setAttribute('autoplay', 'true');
       audio.autoplay = true;
-      audio.id = `audio-${call.peer}`;
-      document.body.appendChild(audio);
+      audio.volume = 1.0;
+      
+      // Attempt immediate play & attach tap-to-play fallback for mobile browser autoplay policy
+      const playAudio = () => {
+        audio.play().catch(err => {
+          console.log("Autoplay blocked by browser policy, unlocking on next user tap:", err);
+          const unlock = () => {
+            audio.play().catch(() => {});
+            document.removeEventListener('pointerdown', unlock);
+            document.removeEventListener('click', unlock);
+          };
+          document.addEventListener('pointerdown', unlock, { once: true });
+          document.addEventListener('click', unlock, { once: true });
+        });
+      };
+      
+      playAudio();
       
       setRadioPeers(prev => {
         if (prev.find(p => p.id === call.peer)) return prev;
@@ -426,6 +478,10 @@ function App() {
       if (audio) audio.remove();
       delete callsRef.current[call.peer];
       setRadioPeers(prev => prev.filter(p => p.id !== call.peer));
+    });
+
+    call.on('error', (err) => {
+      console.error("Peer call error:", err);
     });
   };
 
