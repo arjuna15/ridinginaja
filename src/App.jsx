@@ -859,7 +859,19 @@ function App() {
                  return `${x},${y}`;
                }).join(' ');
                return (
-                 <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'center' }}>
+                 <div style={{ 
+                   marginTop: '32px', 
+                   display: 'flex', 
+                   justifyContent: 'center', 
+                   alignItems: 'center',
+                   width: '220px',
+                   height: '220px',
+                   borderRadius: '24px',
+                   background: 'transparent',
+                   border: 'none',
+                   boxShadow: 'none',
+                   padding: '10px'
+                 }}>
                    <svg width={svgW} height={svgH} viewBox={`0 0 ${svgW} ${svgH}`} style={{ overflow: 'visible' }}>
                      <polyline points={points} fill="none" stroke="#fc4c02" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
                    </svg>
