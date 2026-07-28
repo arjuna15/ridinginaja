@@ -91,6 +91,7 @@ function App() {
   // Share Export State
   const [shareMode, setShareMode] = useState(false);
   const [shareTheme, setShareTheme] = useState('CLASSIC'); // CLASSIC, NEON, MINIMAL
+  const [storyTitle, setStoryTitle] = useState('Afternoon Ride');
   const [isTransparentBg, setIsTransparentBg] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
   
@@ -154,6 +155,18 @@ function App() {
       );
     }
   }, [session]);
+
+  useEffect(() => {
+    if (viewingRoute?.created_at) {
+      const hour = new Date(viewingRoute.created_at).getHours();
+      let title = 'Afternoon Ride ☀️';
+      if (hour >= 5 && hour < 12) title = 'Sunmori Ride 🌅';
+      else if (hour >= 12 && hour < 17) title = 'Afternoon Ride ☀️';
+      else if (hour >= 17 && hour < 20) title = 'Sunset Ride 🌆';
+      else title = 'Night Run 🌙';
+      setStoryTitle(title);
+    }
+  }, [viewingRoute]);
 
   const fetchCloudData = async () => {
     const { data: bikeData } = await supabase.from('motorcycles').select('*').order('created_at', { ascending: false });
@@ -1364,7 +1377,7 @@ function App() {
         {/* STRICT STATS OVERLAY FOR SHARE */}
         {shareMode && viewingRoute && (
           <div style={getShareStyles().wrapper}>
-             <div style={getShareStyles().title}>Afternoon Ride</div>
+             <div style={getShareStyles().title}>{storyTitle || 'My Touring Ride'}</div>
              <div style={getShareStyles().date}>{new Date(viewingRoute.created_at).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
              
              <div style={getShareStyles().statRow}>
@@ -1466,11 +1479,22 @@ function App() {
       {/* SHARE EDITOR CONTROLS (Appears above everything when shareMode is active) */}
       {shareMode && (
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: '#111', zIndex: 100, padding: '20px', borderTopLeftRadius: '24px', borderTopRightRadius: '24px', pointerEvents: 'auto' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
              <h3 style={{ fontSize: '16px', fontWeight: 'bold' }}>Style Editor</h3>
              <button onClick={() => setShareMode(false)} style={{ background: 'transparent', border: 'none', color: '#fff', padding: '4px' }}>
                <X size={24} />
              </button>
+          </div>
+
+          <div style={{ marginBottom: '12px' }}>
+             <label style={{ fontSize: '11px', color: '#888', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '700', display: 'block', marginBottom: '4px' }}>Title Story:</label>
+             <input 
+               className="glass-input" 
+               value={storyTitle} 
+               onChange={(e) => setStoryTitle(e.target.value)} 
+               placeholder="e.g. Sunmori Lembang, Night Run, Friday Ride..." 
+               style={{ fontSize: '13px', padding: '8px 12px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)', color: '#fff', borderRadius: '12px', width: '100%' }}
+             />
           </div>
           
           <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '20px', WebkitOverflowScrolling: 'touch' }}>
