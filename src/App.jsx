@@ -35,7 +35,7 @@ function MapBoundsFitter({ path, isShareMode, shareTheme }) {
         let pBR = [40, 40];
         
         if (isShareMode) {
-           pBR = [40, 100]; // General bottom padding
+           pBR = [40, shareTheme === 'CLASSIC' ? 140 : 100]; // Padding for bottom stats
         }
         
         map.fitBounds(bounds, { 
@@ -215,6 +215,16 @@ function App() {
   const generateShareImage = async () => {
     if (!shareContainerRef.current) return;
     setIsCapturing(true);
+
+    if (mapRef.current) {
+      mapRef.current.invalidateSize();
+      if (viewingRoute && viewingRoute.route_path && viewingRoute.route_path.length > 0) {
+        mapRef.current.fitBounds(L.latLngBounds(viewingRoute.route_path), {
+          paddingTopLeft: [40, 40],
+          paddingBottomRight: [40, shareTheme === 'CLASSIC' ? 140 : 100]
+        });
+      }
+    }
     
     setTimeout(async () => {
       try {
@@ -1327,9 +1337,10 @@ function App() {
             <MapContainer ref={mapRef} center={currentPosition} zoom={15} zoomControl={false} attributionControl={false} style={{ height: '100%', width: '100%', backgroundColor: 'transparent' }}>
               {!(shareMode && themeConfigs[shareTheme]?.hideMap) && (
                 <TileLayer
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                  subdomains={['a', 'b', 'c', 'd']}
+                  maxZoom={19}
                   attribution=""
-                  className="dark-map-tiles"
                 />
               )}
               {viewingRoute && viewingRoute.route_path && <MapBoundsFitter path={viewingRoute.route_path} isShareMode={shareMode} shareTheme={shareTheme} />}
