@@ -1090,7 +1090,7 @@ function App() {
         {/* CUSTOM LOGO FOR SHARE SCREENSHOT */}
         {shareMode && (
            <div style={{ position: 'absolute', bottom: '40px', left: '20px', zIndex: 60 }}>
-              <img src="/logo.png" alt="Mokat Touring Logo" style={{ height: '24px', width: 'auto', filter: `brightness(0) invert(1) drop-shadow(0 2px 10px rgba(0,0,0,0.8)) ${shareTheme==='NEON' ? 'drop-shadow(0 0 10px #0f0)' : ''}` }} />
+              <img src="/logo_white.png" alt="Mokat Touring Logo" style={{ height: '24px', width: 'auto', filter: shareTheme === 'NEON' ? 'drop-shadow(0 0 10px #0f0)' : 'drop-shadow(0 2px 10px rgba(0,0,0,0.8))' }} />
            </div>
         )}
 
