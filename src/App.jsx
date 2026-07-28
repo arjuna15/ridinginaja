@@ -35,12 +35,13 @@ function MapBoundsFitter({ path, isShareMode, shareTheme }) {
         let pBR = [40, 40];
         
         if (isShareMode) {
-           pBR = [40, shareTheme === 'CLASSIC' ? 140 : 100]; // Padding for bottom stats
+           pBR = [40, shareTheme === 'CLASSIC' ? 220 : 80]; // Padding above bottom stats card
         }
         
         map.fitBounds(bounds, { 
           paddingTopLeft: pTL,
-          paddingBottomRight: pBR
+          paddingBottomRight: pBR,
+          animate: false
         });
       }, 50);
       
@@ -230,11 +231,12 @@ function App() {
     setIsCapturing(true);
 
     if (mapRef.current) {
-      mapRef.current.invalidateSize();
+      mapRef.current.invalidateSize({ animate: false });
       if (viewingRoute && viewingRoute.route_path && viewingRoute.route_path.length > 0) {
         mapRef.current.fitBounds(L.latLngBounds(viewingRoute.route_path), {
-          paddingTopLeft: [40, 40],
-          paddingBottomRight: [40, shareTheme === 'CLASSIC' ? 140 : 100]
+          paddingTopLeft: [40, 60],
+          paddingBottomRight: [40, shareTheme === 'CLASSIC' ? 220 : 80],
+          animate: false
         });
       }
     }
