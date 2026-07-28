@@ -91,6 +91,7 @@ function App() {
   // Share Export State
   const [shareMode, setShareMode] = useState(false);
   const [shareTheme, setShareTheme] = useState('CLASSIC'); // CLASSIC, NEON, MINIMAL
+  const [isTransparentBg, setIsTransparentBg] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
   
   const [currentPosition, setCurrentPosition] = useState([-6.2088, 106.8456]); 
@@ -217,7 +218,7 @@ function App() {
     
     setTimeout(async () => {
       try {
-        const bgColor = themeConfigs[shareTheme]?.bg || '#050505';
+        const bgColor = isTransparentBg ? null : (themeConfigs[shareTheme]?.bg || '#050505');
         const canvas = await html2canvas(shareContainerRef.current, {
         useCORS: true,
         scale: 2,
@@ -1308,7 +1309,7 @@ function App() {
           aspectRatio: shareMode ? '9/16' : 'auto',
           height: shareMode ? 'auto' : '100%',
           overflow: 'hidden', 
-          background: (shareMode && shareTheme === 'NEON') ? '#000' : 'transparent',
+          background: isTransparentBg ? 'transparent' : (themeConfigs[shareTheme]?.bg || ((shareMode && shareTheme === 'NEON') ? '#000' : 'transparent')),
           transform: (shareMode && !isCapturing) ? 'translateY(-50%) scale(0.65)' : 'none',
           transformOrigin: 'center center',
           transition: 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
@@ -1477,9 +1478,22 @@ function App() {
              ))}
           </div>
 
-          <button onClick={generateShareImage} className="glass-button primary" style={{ width: '100%', padding: '16px', fontSize: '16px', fontWeight: 'bold', display: 'flex', justifyContent: 'center', gap: '8px' }}>
-             {isCapturing ? 'Generating Image...' : <><Download size={20} /> Download SG</>}
-          </button>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '12px', color: '#aaa', fontWeight: '600' }}>Background:</span>
+                <button 
+                  onClick={() => setIsTransparentBg(!isTransparentBg)} 
+                  className="glass-button" 
+                  style={{ padding: '4px 12px', fontSize: '11px', fontWeight: '700', background: isTransparentBg ? '#4a90e2' : 'rgba(255,255,255,0.06)', color: isTransparentBg ? '#fff' : '#aaa' }}
+                >
+                  {isTransparentBg ? '✨ Transparent PNG (Sticker)' : '⬛ Solid Dark (Default)'}
+                </button>
+              </div>
+           </div>
+
+           <button onClick={generateShareImage} className="glass-button primary" style={{ width: '100%', padding: '16px', fontSize: '16px', fontWeight: 'bold', display: 'flex', justifyContent: 'center', gap: '8px' }}>
+              {isCapturing ? 'Generating Image...' : <><Download size={20} /> Download SG</>}
+           </button>
         </div>
       )}
 
