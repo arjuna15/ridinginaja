@@ -27,11 +27,19 @@ function MapBoundsFitter({ path, isShareMode, shareTheme }) {
   useEffect(() => {
     if (path && path.length > 0) {
       const bounds = L.latLngBounds(path);
+      
+      const height = map.getContainer().clientHeight;
       let pTL = [40, 40];
       let pBR = [40, 40];
       
       if (isShareMode) {
-         pBR = [40, 100]; // General bottom padding for all share modes to clear bottom logos
+         pBR = [40, 100]; // General bottom padding
+         
+         if (shareTheme === 'STRAVA_DARK') {
+           // Push route perfectly into the bottom 50% of the screen
+           pTL = [40, height * 0.45]; 
+           pBR = [40, 40];
+         }
       }
       
       map.fitBounds(bounds, { 
@@ -177,7 +185,7 @@ function App() {
         const canvas = await html2canvas(shareContainerRef.current, {
         useCORS: true,
         scale: 2,
-        backgroundColor: shareTheme === 'STRAVA_DARK' ? null : (shareTheme === 'NEON' ? '#000' : '#050505'),
+        backgroundColor: shareTheme === 'NEON' ? '#000' : '#050505',
         logging: false
       });
         
@@ -782,13 +790,8 @@ function App() {
         
         {/* MAP LAYER */}
         {activeTab === 'RIDE' && session && (
-          <div className="map-background" style={{ 
-            opacity: 1, 
-            top: (shareMode && shareTheme === 'STRAVA_DARK') ? '25%' : 0,
-            bottom: (shareMode && shareTheme === 'STRAVA_DARK') ? '-25%' : 0,
-            transition: 'all 0.4s' 
-          }}>
-            <MapContainer ref={mapRef} center={currentPosition} zoom={15} zoomControl={false} attributionControl={false} style={{ height: '100%', width: '100%', backgroundColor: (shareTheme === 'NEON') ? '#000' : 'transparent' }}>
+          <div className="map-background" style={{ opacity: 1, top: 0, bottom: 0, transition: 'all 0.4s' }}>
+            <MapContainer ref={mapRef} center={currentPosition} zoom={15} zoomControl={false} attributionControl={false} style={{ height: '100%', width: '100%', backgroundColor: (shareTheme === 'NEON' || shareTheme === 'STRAVA_DARK') ? 'transparent' : 'transparent' }}>
               {!(shareMode && (shareTheme === 'NEON' || shareTheme === 'STRAVA_DARK')) && (
                 <TileLayer
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
