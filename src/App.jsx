@@ -1311,7 +1311,7 @@ function App() {
         ref={shareContainerRef} 
         style={{ 
           position: 'absolute', 
-          top: shareMode ? '50%' : 0, 
+          top: (shareMode && !isCapturing) ? '36%' : (shareMode ? '50%' : 0), 
           left: shareMode ? '50%' : 0, 
           right: shareMode ? 'auto' : 0, 
           bottom: shareMode ? 'auto' : 0, 
@@ -1319,7 +1319,7 @@ function App() {
           height: shareMode ? '693px' : '100%',
           overflow: 'hidden', 
           background: isTransparentBg ? 'transparent' : (themeConfigs[shareTheme]?.bg || ((shareMode && shareTheme === 'NEON') ? '#000' : 'transparent')),
-          transform: (shareMode && !isCapturing) ? 'translate(-50%, -50%) scale(0.65)' : (shareMode ? 'translate(-50%, -50%)' : 'none'),
+          transform: (shareMode && !isCapturing) ? 'translate(-50%, -50%) scale(0.52)' : (shareMode ? 'translate(-50%, -50%)' : 'none'),
           transformOrigin: 'center center',
           transition: 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
           pointerEvents: shareMode ? 'none' : 'auto' // Prevent map dragging during share preview
