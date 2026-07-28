@@ -1307,7 +1307,7 @@ function App() {
           aspectRatio: shareMode ? '9/16' : 'auto',
           height: shareMode ? 'auto' : '100%',
           overflow: 'hidden', 
-          background: (shareTheme === 'NEON') ? '#000' : 'transparent',
+          background: (shareMode && shareTheme === 'NEON') ? '#000' : 'transparent',
           transform: (shareMode && !isCapturing) ? 'translateY(-50%) scale(0.65)' : 'none',
           transformOrigin: 'center center',
           transition: 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
