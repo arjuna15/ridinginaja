@@ -23,35 +23,39 @@ const bikeIcon = L.divIcon({
   iconAnchor: [8, 8]
 });
 
-function MapBoundsFitter({ path }) {
+function MapBoundsFitter({ path, isShareMode }) {
   const map = useMap();
   useEffect(() => {
     if (path && path.length > 0) {
       // Lock map controls when viewing saved route
-      map.dragging.disable();
-      map.touchZoom.disable();
-      map.doubleClickZoom.disable();
-      map.scrollWheelZoom.disable();
+      if (map.dragging) map.dragging.disable();
+      if (map.touchZoom) map.touchZoom.disable();
+      if (map.doubleClickZoom) map.doubleClickZoom.disable();
+      if (map.scrollWheelZoom) map.scrollWheelZoom.disable();
 
-      const timer = setTimeout(() => {
+      const fit = () => {
         map.invalidateSize();
         const bounds = L.latLngBounds(path);
-        
         map.fitBounds(bounds, { 
-          padding: [40, 40],
+          padding: [50, 50],
           animate: false
         });
-      }, 50);
+      };
+
+      fit();
+      const timer = setTimeout(fit, 100);
+      const timer2 = setTimeout(fit, 300);
       
       return () => {
         clearTimeout(timer);
-        map.dragging.enable();
-        map.touchZoom.enable();
-        map.doubleClickZoom.enable();
-        map.scrollWheelZoom.enable();
+        clearTimeout(timer2);
+        if (map.dragging) map.dragging.enable();
+        if (map.touchZoom) map.touchZoom.enable();
+        if (map.doubleClickZoom) map.doubleClickZoom.enable();
+        if (map.scrollWheelZoom) map.scrollWheelZoom.enable();
       };
     }
-  }, [path, map]);
+  }, [path, map, isShareMode]);
   return null;
 }
 
@@ -1373,7 +1377,7 @@ function App() {
                     attribution=""
                   />
                 )}
-                {viewingRoute && viewingRoute.route_path && <MapBoundsFitter path={viewingRoute.route_path} />}
+                {viewingRoute && viewingRoute.route_path && <MapBoundsFitter path={viewingRoute.route_path} isShareMode={shareMode} />}
                 <Polyline 
                   positions={viewingRoute?.route_path || routePath} 
                   color={shareMode ? (themeConfigs[shareTheme]?.routeColor || '#4a90e2') : '#4a90e2'} 
