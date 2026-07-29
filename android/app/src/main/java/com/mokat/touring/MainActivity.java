@@ -3,7 +3,6 @@ package com.mokat.touring;
 import android.os.Bundle;
 import android.Manifest;
 import android.content.pm.PackageManager;
-import android.webkit.PermissionRequest;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
@@ -16,6 +15,9 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        
+        // Register RadioService Plugin for Capacitor
+        registerPlugin(RadioServicePlugin.class);
 
         // Request runtime permissions on startup so WebView can use them
         String[] permissions = {

@@ -5,9 +5,11 @@ import L from 'leaflet';
 import html2canvas from 'html2canvas';
 import { Peer } from 'peerjs';
 import 'leaflet/dist/leaflet.css';
-import './index.css';
+import { registerPlugin } from '@capacitor/core';
 import { supabase } from './supabaseClient';
 import bikeDatabase from './bikeDatabase';
+
+const RadioService = registerPlugin('RadioService');
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -643,10 +645,12 @@ function App() {
         const targetRoom = roomCode.trim().toUpperCase() || 'MOKAT-PUBLIC';
         setActiveRoomCode(targetRoom);
         setRadioStatus(`Online in Room [${targetRoom}]`);
-
-        const channel = supabase.channel(`radio_room_${targetRoom}`, {
-          config: { presence: { key: session.user.id } }
-        });
+        // Start Android Foreground Service so radio doesn't disconnect when app is minimized/screen locked
+        try {
+          RadioService.startService({ roomCode: targetRoom });
+        } catch (e) {
+          console.log("RadioService native plugin not active on web environment");
+        }
         radioChannelRef.current = channel;
 
         const connectToPeer = (targetPeerId, targetName) => {
@@ -799,6 +803,11 @@ function App() {
       const audio = document.getElementById(`audio-${peerId}`);
       if (audio) audio.remove();
     });
+    try {
+      RadioService.stopService();
+    } catch (e) {
+      console.log("RadioService native plugin not active on web environment");
+    }
     callsRef.current = {};
     setRadioPeers([]);
     setInRadio(false);
