@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Square, Map as MapIcon, User, Activity, Navigation, ChevronRight, Zap, Bike, LogOut, LocateFixed, Camera, LayoutTemplate, X, Download, Headset, Mic, MicOff, PhoneOff, Search, Settings, Mail, Ruler, Moon, Info, Shield, ChevronDown, Trash2 } from 'lucide-react';
+import { Play, Square, Map as MapIcon, User, Activity, Navigation, ChevronRight, Zap, Bike, LogOut, LocateFixed, Camera, LayoutTemplate, X, Download, Headset, Mic, MicOff, PhoneOff, Search, Settings, Mail, Ruler, Moon, Info, Shield, ChevronDown, Trash2, AlertTriangle, Fuel, Award, Compass, Radio, Wrench } from 'lucide-react';
 import { MapContainer, TileLayer, Polyline, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import html2canvas from 'html2canvas';
@@ -117,6 +117,23 @@ function App() {
   const [bikeSearch, setBikeSearch] = useState('');
   const [viewingRoute, setViewingRoute] = useState(null);
 
+  // SOS Emergency State
+  const [showSosModal, setShowSosModal] = useState(false);
+  const [sosCountdown, setSosCountdown] = useState(5);
+  const [isSosActive, setIsSosActive] = useState(false);
+  const sosTimerRef = useRef(null);
+
+  // SPBU & Rest Area Finder State
+  const [nearbyPlaces, setNearbyPlaces] = useState([]);
+  const [showPlacesModal, setShowPlacesModal] = useState(false);
+
+  // Maintenance & Achievements State
+  const [selectedBikeForMaint, setSelectedBikeForMaint] = useState(null);
+  const [lastOilChangeKm, setLastOilChangeKm] = useState(() => localStorage.getItem('mokat_oil_km') || 0);
+
+  // Radio Channel State
+  const [radioChannel, setRadioChannel] = useState('Ch-1 Touring');
+
   // Settings State
   const [displayName, setDisplayName] = useState('');
   const [distanceUnit, setDistanceUnit] = useState('km'); // km or mi
@@ -228,6 +245,51 @@ function App() {
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
+  };
+
+  // SOS Handler
+  const handleTriggerSos = () => {
+    setShowSosModal(true);
+    setSosCountdown(5);
+    let count = 5;
+    sosTimerRef.current = setInterval(() => {
+      count -= 1;
+      setSosCountdown(count);
+      if (count <= 0) {
+        clearInterval(sosTimerRef.current);
+        setIsSosActive(true);
+        // Send WhatsApp SOS Location Link
+        const [lat, lng] = currentPosition;
+        const mapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
+        const msg = encodeURIComponent(`🚨 SOS EMERGENCY ALERT MOKAT! 🚨\nSaya membutuhkan bantuan darurat saat touring!\nPosisi GPS: ${mapsUrl}`);
+        window.open(`https://api.whatsapp.com/send?text=${msg}`, '_blank');
+      }
+    }, 1000);
+  };
+
+  const handleCancelSos = () => {
+    if (sosTimerRef.current) clearInterval(sosTimerRef.current);
+    setShowSosModal(false);
+    setIsSosActive(false);
+    setSosCountdown(5);
+  };
+
+  // SPBU & Rest Area Finder
+  const handleFindNearbyPlaces = (type) => {
+    const [lat, lng] = currentPosition;
+    let query = 'SPBU Pertamina';
+    if (type === 'SPBU') query = 'SPBU Pertamina Shell';
+    else if (type === 'FOOD') query = 'Restoran Rumah Makan';
+    else if (type === 'REPAIR') query = 'Bengkel Motor Tambal Ban';
+
+    window.open(`https://www.google.com/maps/search/${encodeURIComponent(query)}/@${lat},${lng},15z`, '_blank');
+  };
+
+  // Maintenance Handler
+  const handleResetOilKm = (totalKm) => {
+    setLastOilChangeKm(totalKm);
+    localStorage.setItem('mokat_oil_km', totalKm);
+    alert("Berhasil mereset riwayat pergantian Oli Mesin!");
   };
 
   const handleCenterMap = () => {
@@ -877,16 +939,34 @@ function App() {
 
           <div className="dashboard-spacer"></div>
 
-          {/* LOCATE BUTTON - Hide during export & share mode */}
+          {/* LOCATE & QUICK ACTIONS - Hide during export & share mode */}
           {!viewingRoute && !shareMode && (
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', paddingHorizontal: '16px' }}>
               <button 
-                className="glass-button" 
-                onClick={handleCenterMap}
-                style={{ width: '44px', height: '44px', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.2)' }}
+                className="glass-button danger" 
+                onClick={handleTriggerSos}
+                style={{ padding: '8px 16px', fontSize: '12px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '6px', background: 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)', boxShadow: '0 0 20px rgba(239,68,68,0.5)', borderRadius: '14px' }}
               >
-                <LocateFixed size={20} color="#4a90e2" />
+                <AlertTriangle size={16} color="#fff" /> SOS EMERGENCY
               </button>
+
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button 
+                  className="glass-button" 
+                  onClick={() => handleFindNearbyPlaces('SPBU')}
+                  title="Cari SPBU Terdekat"
+                  style={{ padding: '8px 12px', fontSize: '12px', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', gap: '4px', borderRadius: '14px' }}
+                >
+                  <Fuel size={16} color="#4ade80" /> SPBU
+                </button>
+                <button 
+                  className="glass-button" 
+                  onClick={handleCenterMap}
+                  style={{ width: '40px', height: '40px', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >
+                  <LocateFixed size={20} color="#4a90e2" />
+                </button>
+              </div>
             </div>
           )}
 
@@ -1147,33 +1227,66 @@ function App() {
                   <p style={{ fontSize: '13px', color: '#666', marginTop: '8px' }}>Search from 100+ motorcycles to add.</p>
                 </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', overflowY: 'auto', flex: 1 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto', flex: 1 }}>
                   {bikes.map(bike => {
                     const dbBike = bikeDatabase.find(b => b.brand.toLowerCase() === (bike.brand || '').toLowerCase() && b.name.toLowerCase() === (bike.name || '').toLowerCase());
                     const imgUrl = bike.img || dbBike?.img;
                     const ccVal = bike.cc || dbBike?.cc;
+                    const totalKm = rides.reduce((sum, r) => sum + (r.distance || 0), 0);
+                    const oilProgressKm = Math.max(0, totalKm - lastOilChangeKm);
+                    const oilPercent = Math.min(100, (oilProgressKm / 2000) * 100);
+
                     return (
-                      <div key={bike.id} className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: '16px', justifyContent: 'space-between' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1, minWidth: 0 }}>
-                          <div style={{ width: '56px', height: '56px', borderRadius: '14px', background: 'rgba(255,255,255,0.06)', overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            {imgUrl ? (
-                              <img src={imgUrl} alt={bike.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-                            ) : (
-                              <Bike size={24} color="#4a90e2" />
-                            )}
+                      <div key={bike.id} className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '14px', padding: '16px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', justifyContent: 'space-between' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1, minWidth: 0 }}>
+                            <div style={{ width: '56px', height: '56px', borderRadius: '14px', background: 'rgba(255,255,255,0.06)', overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              {imgUrl ? (
+                                <img src={imgUrl} alt={bike.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                              ) : (
+                                <Bike size={24} color="#4a90e2" />
+                              )}
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{bike.brand} {bike.name}</h3>
+                              <p style={{ fontSize: '13px', color: '#888', fontWeight: '500' }}>{bike.type || 'Standard'}{ccVal ? ` • ${ccVal}cc` : ''}</p>
+                            </div>
                           </div>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{bike.brand} {bike.name}</h3>
-                            <p style={{ fontSize: '13px', color: '#888', fontWeight: '500' }}>{bike.type || 'Standard'}{ccVal ? ` • ${ccVal}cc` : ''}</p>
+                          <button 
+                            onClick={() => handleDeleteBike(bike.id)}
+                            style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444', borderRadius: '12px', padding: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s' }}
+                            title="Delete Motorcycle"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
+
+                        {/* MAINTENANCE SERVICE LIFETIME TRACKER */}
+                        <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '14px', padding: '12px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontSize: '11px', fontWeight: '800', color: '#4a90e2', textTransform: 'uppercase', letterSpacing: '1px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <Wrench size={14} /> Maintenance Status
+                            </span>
+                            <button 
+                              className="glass-button" 
+                              onClick={() => handleResetOilKm(totalKm)}
+                              style={{ padding: '4px 10px', fontSize: '10px', background: 'rgba(74,144,226,0.15)', color: '#4a90e2', border: '1px solid rgba(74,144,226,0.3)' }}
+                            >
+                              Reset Oli Mesin
+                            </button>
+                          </div>
+
+                          {/* Oli Mesin Progress */}
+                          <div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px' }}>
+                              <span style={{ color: '#aaa' }}>🛢️ Oli Mesin (Ganti per 2.000 KM)</span>
+                              <span style={{ fontWeight: '700', color: oilPercent >= 90 ? '#ef4444' : '#4ade80' }}>{oilProgressKm.toFixed(0)} / 2.000 km</span>
+                            </div>
+                            <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.1)', borderRadius: '10px', overflow: 'hidden' }}>
+                              <div style={{ width: `${oilPercent}%`, height: '100%', background: oilPercent >= 90 ? '#ef4444' : 'linear-gradient(90deg, #4ade80 0%, #4a90e2 100%)', transition: 'width 0.5s ease' }}></div>
+                            </div>
                           </div>
                         </div>
-                        <button 
-                          onClick={() => handleDeleteBike(bike.id)}
-                          style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444', borderRadius: '12px', padding: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s' }}
-                          title="Delete Motorcycle"
-                        >
-                          <Trash2 size={18} />
-                        </button>
                       </div>
                     );
                   })}
@@ -1597,6 +1710,35 @@ function App() {
                </button>
             </>
           )}
+        </div>
+      )}
+
+      {/* SOS EMERGENCY ALERT MODAL */}
+      {showSosModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(16px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div className="glass-panel" style={{ width: '100%', maxWidth: '380px', padding: '28px 24px', textAlign: 'center', background: 'linear-gradient(135deg, rgba(239,68,68,0.2) 0%, rgba(0,0,0,0.9) 100%)', border: '1px solid rgba(239,68,68,0.4)', boxShadow: '0 0 50px rgba(239,68,68,0.5)' }}>
+            <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(239,68,68,0.2)', border: '2px solid #ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', animation: 'pulseGlowRed 1s infinite' }}>
+              <AlertTriangle size={32} color="#ef4444" />
+            </div>
+            
+            <h2 style={{ fontSize: '20px', fontWeight: '900', color: '#fff', marginBottom: '8px' }}>SOS EMERGENCY!</h2>
+            <p style={{ fontSize: '13px', color: '#ccc', marginBottom: '20px' }}>
+              {isSosActive ? "Sinyal SOS & Lokasi GPS Darurat sedang dikirim!" : `Mengirim Lokasi GPS Darurat ke WhatsApp Kontak dalam ${sosCountdown} detik...`}
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {!isSosActive && (
+                <button className="glass-button" onClick={handleCancelSos} style={{ padding: '14px', fontSize: '14px', fontWeight: '800', background: 'rgba(255,255,255,0.1)', color: '#fff', borderRadius: '16px' }}>
+                  BATALKAN SOS
+                </button>
+              )}
+              {isSosActive && (
+                <button className="glass-button danger" onClick={handleCancelSos} style={{ padding: '14px', fontSize: '14px', fontWeight: '800', background: '#ef4444', color: '#fff', borderRadius: '16px' }}>
+                  TUTUP ALERT SOS
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       )}
 
