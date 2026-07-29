@@ -35,7 +35,8 @@ function MapBoundsFitter({ path, isShareMode, shareTheme }) {
         let pBR = [40, 40];
         
         if (isShareMode) {
-           pBR = [40, shareTheme === 'CLASSIC' ? 180 : 60]; // Padding above bottom stats card
+           pBR = [40, shareTheme === 'CLASSIC' ? 220 : 60]; // Padding above bottom stats card
+           pTL = [80, 40]; // Top padding for logo & title
         }
         
         map.fitBounds(bounds, { 
