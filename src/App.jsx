@@ -826,9 +826,9 @@ function App() {
       wrapper: { position: 'absolute', top: '8%', left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', color: '#fff', zIndex: 50 },
       title: { display: 'none' },
       date: { display: 'none' },
-      statRow: { display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center', textAlign: 'center' },
-      statVal: { fontSize: '44px', fontWeight: '900', textShadow: '0 4px 20px rgba(0,0,0,0.8)' },
-      statLbl: { fontSize: '12px', color: '#aaa', textTransform: 'uppercase', letterSpacing: '2px', marginTop: '2px', textShadow: '0 2px 10px rgba(0,0,0,0.8)' }
+      statRow: { display: 'flex', flexDirection: 'column', gap: '28px', alignItems: 'center', textAlign: 'center' },
+      statVal: { fontSize: '44px', fontWeight: '900', textShadow: '0 4px 20px rgba(0,0,0,0.8)', lineHeight: '1', marginBottom: '4px' },
+      statLbl: { fontSize: '12px', color: '#aaa', textTransform: 'uppercase', letterSpacing: '2px', textShadow: '0 2px 10px rgba(0,0,0,0.8)', lineHeight: '1' }
     };
   };
 
