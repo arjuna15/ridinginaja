@@ -232,20 +232,11 @@ function App() {
     setIsCapturing(true);
 
     try {
-      // Force Leaflet map to invalidate size and re-fit bounds for exact alignment before capture
+      // Force Leaflet map to sync tile rendering without changing center or bounds
       if (mapRef.current) {
         mapRef.current.invalidateSize();
-        if (viewingRoute?.route_path && viewingRoute.route_path.length > 0) {
-          const bounds = L.latLngBounds(viewingRoute.route_path);
-          mapRef.current.fitBounds(bounds, {
-            paddingTopLeft: [40, 40],
-            paddingBottomRight: [40, shareTheme === 'CLASSIC' ? 180 : 60],
-            animate: false
-          });
-        }
       }
-      // Wait for Leaflet tile & polyline canvas sync
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await new Promise(resolve => setTimeout(resolve, 200));
 
       const targetWidth = shareContainerRef.current.offsetWidth || 360;
       const targetScale = 1080 / targetWidth;
