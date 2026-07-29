@@ -320,11 +320,10 @@ function App() {
     setIsCapturing(true);
 
     try {
-      // Force Leaflet map to sync tile rendering without changing center or bounds
       if (mapRef.current) {
         mapRef.current.invalidateSize();
       }
-      await new Promise(resolve => setTimeout(resolve, 200));
+      await new Promise(resolve => setTimeout(resolve, 300));
 
       const targetWidth = shareContainerRef.current.offsetWidth || 360;
       const targetScale = 1080 / targetWidth;
@@ -337,15 +336,39 @@ function App() {
       });
       
       const image = canvas.toDataURL("image/png");
+      const filename = `mokat-story-${shareTheme.toLowerCase()}-${new Date().getTime()}.png`;
+
+      // Try Native Web Share API (Works seamlessly on Android Chrome / WebViews)
+      if (navigator.share && navigator.canShare) {
+        try {
+          const res = await fetch(image);
+          const blob = await res.blob();
+          const file = new File([blob], filename, { type: 'image/png' });
+          if (navigator.canShare({ files: [file] })) {
+            await navigator.share({
+              files: [file],
+              title: 'Mokat Touring SG',
+              text: 'My Touring Story Stats'
+            });
+            setIsCapturing(false);
+            return;
+          }
+        } catch (shareErr) {
+          console.log("Web Share fallback to direct download:", shareErr);
+        }
+      }
       
+      // Fallback Direct File Download
       const a = document.createElement('a');
       a.href = image;
-      a.download = `mokat-story-${shareTheme.toLowerCase()}-${new Date().getTime()}.png`;
+      a.download = filename;
+      document.body.appendChild(a);
       a.click();
+      document.body.removeChild(a);
       
     } catch (err) {
       console.error("Failed to generate image:", err);
-      alert("Gagal memproses gambar.");
+      alert("Gagal memproses gambar: " + err.message);
     } finally {
       setIsCapturing(false);
     }
