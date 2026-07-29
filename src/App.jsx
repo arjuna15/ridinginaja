@@ -137,8 +137,8 @@ function App() {
 
   // Settings State
   const [displayName, setDisplayName] = useState('');
-  const [distanceUnit, setDistanceUnit] = useState('km'); // km or mi
-  const [speedUnit, setSpeedUnit] = useState('kmh'); // kmh or mph
+  const [distanceUnit, setDistanceUnit] = useState(() => localStorage.getItem('mokat_distance_unit') || 'km');
+  const [speedUnit, setSpeedUnit] = useState(() => localStorage.getItem('mokat_speed_unit') || 'kmh');
 
   // Radio State
   const [inRadio, setInRadio] = useState(false);
@@ -209,12 +209,25 @@ function App() {
   }, [viewingRoute]);
 
   const fetchCloudData = async () => {
-    const { data: bikeData } = await supabase.from('motorcycles').select('*').order('created_at', { ascending: false });
+    if (!session?.user?.id) return;
+    const uid = session.user.id;
+    const { data: bikeData } = await supabase.from('motorcycles').select('*').eq('user_id', uid).order('created_at', { ascending: false });
     if (bikeData) setBikes(bikeData);
 
-    const { data: rideData } = await supabase.from('rides').select('*').order('created_at', { ascending: false });
+    const { data: rideData } = await supabase.from('rides').select('*').eq('user_id', uid).order('created_at', { ascending: false });
     if (rideData) setRides(rideData);
   };
+
+  // Re-fetch data when app comes back from background (visibility change)
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible' && session?.user) {
+        fetchCloudData();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, [session]);
 
   const handleAuth = async (e) => {
     e.preventDefault();
@@ -1452,8 +1465,8 @@ function App() {
                   <span style={{ fontSize: '14px', fontWeight: '600' }}>Distance Unit</span>
                 </div>
                 <div style={{ display: 'flex', gap: '4px', background: 'rgba(255,255,255,0.04)', borderRadius: '12px', padding: '3px' }}>
-                  <button onClick={() => setDistanceUnit('km')} style={{ padding: '6px 14px', borderRadius: '10px', border: 'none', fontSize: '12px', fontWeight: '700', cursor: 'pointer', background: distanceUnit === 'km' ? '#4a90e2' : 'transparent', color: distanceUnit === 'km' ? '#fff' : '#888', transition: 'all 0.3s' }}>KM</button>
-                  <button onClick={() => setDistanceUnit('mi')} style={{ padding: '6px 14px', borderRadius: '10px', border: 'none', fontSize: '12px', fontWeight: '700', cursor: 'pointer', background: distanceUnit === 'mi' ? '#4a90e2' : 'transparent', color: distanceUnit === 'mi' ? '#fff' : '#888', transition: 'all 0.3s' }}>Miles</button>
+                  <button onClick={() => { setDistanceUnit('km'); localStorage.setItem('mokat_distance_unit', 'km'); }} style={{ padding: '6px 14px', borderRadius: '10px', border: 'none', fontSize: '12px', fontWeight: '700', cursor: 'pointer', background: distanceUnit === 'km' ? '#4a90e2' : 'transparent', color: distanceUnit === 'km' ? '#fff' : '#888', transition: 'all 0.3s' }}>KM</button>
+                  <button onClick={() => { setDistanceUnit('mi'); localStorage.setItem('mokat_distance_unit', 'mi'); }} style={{ padding: '6px 14px', borderRadius: '10px', border: 'none', fontSize: '12px', fontWeight: '700', cursor: 'pointer', background: distanceUnit === 'mi' ? '#4a90e2' : 'transparent', color: distanceUnit === 'mi' ? '#fff' : '#888', transition: 'all 0.3s' }}>Miles</button>
                 </div>
               </div>
 
@@ -1464,8 +1477,8 @@ function App() {
                   <span style={{ fontSize: '14px', fontWeight: '600' }}>Speed Unit</span>
                 </div>
                 <div style={{ display: 'flex', gap: '4px', background: 'rgba(255,255,255,0.04)', borderRadius: '12px', padding: '3px' }}>
-                  <button onClick={() => setSpeedUnit('kmh')} style={{ padding: '6px 14px', borderRadius: '10px', border: 'none', fontSize: '12px', fontWeight: '700', cursor: 'pointer', background: speedUnit === 'kmh' ? '#4a90e2' : 'transparent', color: speedUnit === 'kmh' ? '#fff' : '#888', transition: 'all 0.3s' }}>km/h</button>
-                  <button onClick={() => setSpeedUnit('mph')} style={{ padding: '6px 14px', borderRadius: '10px', border: 'none', fontSize: '12px', fontWeight: '700', cursor: 'pointer', background: speedUnit === 'mph' ? '#4a90e2' : 'transparent', color: speedUnit === 'mph' ? '#fff' : '#888', transition: 'all 0.3s' }}>mph</button>
+                  <button onClick={() => { setSpeedUnit('kmh'); localStorage.setItem('mokat_speed_unit', 'kmh'); }} style={{ padding: '6px 14px', borderRadius: '10px', border: 'none', fontSize: '12px', fontWeight: '700', cursor: 'pointer', background: speedUnit === 'kmh' ? '#4a90e2' : 'transparent', color: speedUnit === 'kmh' ? '#fff' : '#888', transition: 'all 0.3s' }}>km/h</button>
+                  <button onClick={() => { setSpeedUnit('mph'); localStorage.setItem('mokat_speed_unit', 'mph'); }} style={{ padding: '6px 14px', borderRadius: '10px', border: 'none', fontSize: '12px', fontWeight: '700', cursor: 'pointer', background: speedUnit === 'mph' ? '#4a90e2' : 'transparent', color: speedUnit === 'mph' ? '#fff' : '#888', transition: 'all 0.3s' }}>mph</button>
                 </div>
               </div>
 
