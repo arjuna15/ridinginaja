@@ -1,0 +1,17 @@
+{
+  "short_name": "Mokat Ride",
+  "name": "Mokat Touring Ride Tracker",
+  "icons": [
+    {
+      "src": "/logo_white.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#050505",
+  "theme_color": "#050505",
+  "display": "standalone",
+  "orientation": "portrait"
+}
