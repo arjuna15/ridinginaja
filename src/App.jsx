@@ -944,48 +944,48 @@ function App() {
              </div>
           )}
 
-          <div className="dashboard-spacer"></div>
-
-          {/* LOCATE & QUICK ACTIONS - Hide during export & share mode */}
+          {/* FLOATING MAP CONTROLS (Right side floating pill) */}
           {!viewingRoute && !shareMode && (
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', paddingHorizontal: '16px' }}>
+            <div style={{ position: 'absolute', right: '16px', top: '100px', display: 'flex', flexDirection: 'column', gap: '10px', zIndex: 30 }}>
+              <button 
+                className="glass-button" 
+                onClick={handleCenterMap}
+                title="Pusatkan Lokasi"
+                style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'rgba(0,0,0,0.65)', border: '1px solid rgba(255,255,255,0.2)', boxShadow: '0 8px 20px rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <LocateFixed size={20} color="#3b82f6" />
+              </button>
+              <button 
+                className="glass-button" 
+                onClick={() => handleFindNearbyPlaces('SPBU')}
+                title="Cari SPBU Terdekat"
+                style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'rgba(0,0,0,0.65)', border: '1px solid rgba(255,255,255,0.2)', boxShadow: '0 8px 20px rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <Fuel size={18} color="#10b981" />
+              </button>
               <button 
                 className="glass-button danger" 
                 onClick={handleTriggerSos}
-                style={{ padding: '8px 16px', fontSize: '12px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '6px', background: 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)', boxShadow: '0 0 20px rgba(239,68,68,0.5)', borderRadius: '14px' }}
+                title="SOS Emergency"
+                style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)', boxShadow: '0 0 20px rgba(239,68,68,0.6)', border: '1px solid rgba(255,255,255,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
               >
-                <AlertTriangle size={16} color="#fff" /> SOS EMERGENCY
+                <AlertTriangle size={20} color="#fff" />
               </button>
-
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button 
-                  className="glass-button" 
-                  onClick={() => handleFindNearbyPlaces('SPBU')}
-                  title="Cari SPBU Terdekat"
-                  style={{ padding: '8px 12px', fontSize: '12px', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', gap: '4px', borderRadius: '14px' }}
-                >
-                  <Fuel size={16} color="#4ade80" /> SPBU
-                </button>
-                <button 
-                  className="glass-button" 
-                  onClick={handleCenterMap}
-                  style={{ width: '40px', height: '40px', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                >
-                  <LocateFixed size={20} color="#4a90e2" />
-                </button>
-              </div>
             </div>
           )}
 
-        {!viewingRoute && !shareMode && (
-          <div className="action-area">
-            <div className={`btn-start ${isTracking ? 'recording' : ''}`} onClick={isTracking ? stopTracking : startTracking}>
-              <div className="btn-inner" style={{ color: '#000' }}>
-                {isTracking ? <Square size={28} fill="currentColor" /> : <Play size={32} fill="currentColor" style={{ marginLeft: '4px' }} />}
+          <div className="dashboard-spacer"></div>
+
+          {/* MAIN START / STOP RECORDING BUTTON */}
+          {!viewingRoute && !shareMode && (
+            <div className="action-area" style={{ marginBottom: '16px' }}>
+              <div className={`btn-start ${isTracking ? 'recording' : ''}`} onClick={isTracking ? stopTracking : startTracking}>
+                <div className="btn-inner" style={{ color: '#000' }}>
+                  {isTracking ? <Square size={28} fill="currentColor" /> : <Play size={32} fill="currentColor" style={{ marginLeft: '4px' }} />}
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
         {/* STATS PANEL - Hide during share mode (we use custom overlay) */}
         {!shareMode && (
