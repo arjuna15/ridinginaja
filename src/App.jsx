@@ -158,6 +158,7 @@ function App() {
     }
     setRoomCode(res);
   };
+  const localStreamRef = useRef(null);
   const peerInstanceRef = useRef(null);
   const radioChannelRef = useRef(null);
   const callsRef = useRef({});
