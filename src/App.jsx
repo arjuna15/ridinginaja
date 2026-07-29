@@ -231,10 +231,10 @@ function App() {
     setIsCapturing(true);
 
     try {
-      // Capture element at scale 2.77 (390px * 2.77 = 1080px width, 693px * 2.77 = 1920px height)
+      // Capture element at scale 3.0 (360px * 3.0 = 1080px width, 640px * 3.0 = 1920px height)
       const canvas = await html2canvas(shareContainerRef.current, {
         useCORS: true,
-        scale: 2.77,
+        scale: 3.0,
         backgroundColor: isTransparentBg ? null : (themeConfigs[shareTheme]?.bg || '#050505'),
         logging: false
       });
@@ -1313,22 +1313,21 @@ function App() {
         alignItems: 'center',
         justifyContent: 'center',
         pointerEvents: 'none',
-        zIndex: shareMode ? 50 : 1,
-        transform: (shareMode && !isCapturing) ? 'translateY(-8%) scale(0.68)' : 'none',
-        transition: isCapturing ? 'none' : 'transform 0.3s ease'
+        zIndex: shareMode ? 50 : 1
       }}>
         <div 
           ref={shareContainerRef} 
           style={{ 
             position: 'relative', 
-            width: shareMode ? '390px' : '100%',
-            height: shareMode ? '693px' : '100%',
+            width: shareMode ? '360px' : '100%',
+            height: shareMode ? '640px' : '100%',
             aspectRatio: shareMode ? '9 / 16' : 'auto',
             overflow: 'hidden', 
             borderRadius: shareMode ? '24px' : '0px',
             boxShadow: shareMode ? '0 25px 60px rgba(0,0,0,0.8)' : 'none',
             background: isTransparentBg ? 'transparent' : (themeConfigs[shareTheme]?.bg || ((shareMode && shareTheme === 'NEON') ? '#000' : '#050505')),
-            pointerEvents: shareMode ? 'none' : 'auto' // Prevent map dragging during share preview
+            pointerEvents: shareMode ? 'none' : 'auto',
+            transform: 'none'
           }}
         >
           
