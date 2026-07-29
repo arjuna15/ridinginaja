@@ -1320,9 +1320,11 @@ function App() {
           ref={shareContainerRef} 
           style={{ 
             position: 'relative', 
-            width: shareMode ? '360px' : '100%',
-            height: shareMode ? '640px' : '100%',
+            width: shareMode ? 'min(90vw, calc(70vh * 9 / 16))' : '100%',
+            height: shareMode ? 'min(70vh, calc(90vw * 16 / 9))' : '100%',
             aspectRatio: shareMode ? '9 / 16' : 'auto',
+            maxHeight: shareMode ? '70vh' : 'none',
+            maxWidth: shareMode ? '100vw' : 'none',
             overflow: 'hidden', 
             borderRadius: shareMode ? '24px' : '0px',
             boxShadow: shareMode ? '0 25px 60px rgba(0,0,0,0.8)' : 'none',
