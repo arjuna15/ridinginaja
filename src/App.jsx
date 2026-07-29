@@ -743,7 +743,7 @@ function App() {
     // 1. CLASSIC — Bottom gradient, horizontal 3-col stats
     if (shareTheme === 'CLASSIC') {
       return {
-        wrapper: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: '40px 20px', background: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.8) 50%, transparent 100%)', zIndex: 50 },
+        wrapper: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: '40px 28px', background: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.8) 50%, transparent 100%)', zIndex: 50 },
         title: { fontSize: '28px', fontWeight: 'bold', color: '#fff', marginBottom: '4px' },
         date: { fontSize: '14px', color: '#aaa', marginBottom: '24px' },
         statRow: { display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.2)', paddingTop: '16px' },
@@ -856,7 +856,7 @@ function App() {
         <>
           {/* VIEWING ROUTE HEADER */}
           {viewingRoute && !shareMode && (
-             <div className="glass-panel" style={{ padding: '12px', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+             <div className="glass-panel" style={{ padding: '14px 20px', marginBottom: '16px', marginInline: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                <div>
                  <p style={{fontSize: '12px', color: '#888'}}>Viewing Saved Route</p>
                  <p style={{fontSize: '14px', fontWeight: 'bold'}}>{new Date(viewingRoute.created_at).toLocaleDateString()}</p>
