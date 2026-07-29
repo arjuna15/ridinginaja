@@ -232,10 +232,18 @@ function App() {
     setIsCapturing(true);
 
     try {
-      // Capture element at scale 3.0 (360px * 3.0 = 1080px width, 640px * 3.0 = 1920px height)
+      // Force Leaflet map to recalculate bounds and re-center polyline before screenshot
+      if (mapRef.current) {
+        mapRef.current.invalidateSize();
+      }
+      await new Promise(resolve => setTimeout(resolve, 150));
+
+      const targetWidth = shareContainerRef.current.offsetWidth || 360;
+      const targetScale = 1080 / targetWidth;
+
       const canvas = await html2canvas(shareContainerRef.current, {
         useCORS: true,
-        scale: 3.0,
+        scale: targetScale,
         backgroundColor: isTransparentBg ? null : (themeConfigs[shareTheme]?.bg || '#050505'),
         logging: false
       });
