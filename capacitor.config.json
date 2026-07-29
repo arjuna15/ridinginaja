@@ -1,5 +1,9 @@
 {
   "appId": "com.mokat.touring",
   "appName": "Mokat Touring",
-  "webDir": "dist"
+  "webDir": "dist",
+  "server": {
+    "url": "https://ridinginaja.vercel.app",
+    "cleartext": true
+  }
 }
