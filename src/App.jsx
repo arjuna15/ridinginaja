@@ -121,6 +121,7 @@ function App() {
   const [showSosModal, setShowSosModal] = useState(false);
   const [sosCountdown, setSosCountdown] = useState(5);
   const [isSosActive, setIsSosActive] = useState(false);
+  const [emergencyContact, setEmergencyContact] = useState(() => localStorage.getItem('mokat_emergency_contact') || '');
   const sosTimerRef = useRef(null);
 
   // SPBU & Rest Area Finder State
@@ -262,7 +263,13 @@ function App() {
         const [lat, lng] = currentPosition;
         const mapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
         const msg = encodeURIComponent(`🚨 SOS EMERGENCY ALERT MOKAT! 🚨\nSaya membutuhkan bantuan darurat saat touring!\nPosisi GPS: ${mapsUrl}`);
-        window.open(`https://api.whatsapp.com/send?text=${msg}`, '_blank');
+        
+        let targetNum = emergencyContact.trim().replace(/^0/, '62').replace(/[^0-9]/g, '');
+        if (targetNum) {
+          window.open(`https://api.whatsapp.com/send?phone=${targetNum}&text=${msg}`, '_blank');
+        } else {
+          window.open(`https://api.whatsapp.com/send?text=${msg}`, '_blank');
+        }
       }
     }, 1000);
   };
@@ -1325,7 +1332,25 @@ function App() {
                 <Mail size={14} />
                 {session?.user?.email || 'No email'}
               </div>
-              <div style={{ fontSize: '11px', color: '#4ade80', marginTop: '4px', fontWeight: '600' }}>✓ Auto-saved to Cloud & Device</div>
+
+              {/* SOS EMERGENCY CONTACT INPUT */}
+              <div style={{ marginTop: '16px', background: 'rgba(239,68,68,0.06)', padding: '14px', borderRadius: '16px', border: '1px solid rgba(239,68,68,0.2)' }}>
+                <div style={{ fontSize: '11px', fontWeight: '800', color: '#ef4444', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                  <AlertTriangle size={14} /> SOS Emergency Contact (WhatsApp)
+                </div>
+                <input 
+                  className="glass-input" 
+                  value={emergencyContact} 
+                  onChange={(e) => {
+                    setEmergencyContact(e.target.value);
+                    localStorage.setItem('mokat_emergency_contact', e.target.value);
+                  }}
+                  placeholder="e.g. 081234567890 (No. WA Kontak Darurat)"
+                  style={{ textAlign: 'center', fontSize: '13px', padding: '10px', background: 'rgba(0,0,0,0.3)', borderColor: 'rgba(239,68,68,0.3)' }}
+                />
+              </div>
+
+              <div style={{ fontSize: '11px', color: '#4ade80', marginTop: '8px', fontWeight: '600' }}>✓ Auto-saved to Cloud & Device</div>
             </div>
           </div>
 
