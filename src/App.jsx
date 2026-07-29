@@ -230,14 +230,16 @@ function App() {
     if (!shareContainerRef.current) return;
     setIsCapturing(true);
 
-    // Wait for React to re-render shareContainerRef without CSS transform distortion
-    await new Promise(resolve => setTimeout(resolve, 100));
+    // Wait for React to re-render shareContainerRef to exact 1080x1920 canvas size
+    await new Promise(resolve => setTimeout(resolve, 120));
 
     try {
       const bgColor = isTransparentBg ? null : (themeConfigs[shareTheme]?.bg || '#050505');
       const canvas = await html2canvas(shareContainerRef.current, {
         useCORS: true,
-        scale: 2,
+        scale: 1, // 1:1 pixel rendering for 1080x1920
+        width: 1080,
+        height: 1920,
         backgroundColor: bgColor,
         logging: false
       });
@@ -1326,6 +1328,7 @@ function App() {
             position: 'relative', 
             width: shareMode ? (isCapturing ? '1080px' : '390px') : '100%',
             height: shareMode ? (isCapturing ? '1920px' : '693px') : '100%',
+            aspectRatio: shareMode ? '9 / 16' : 'auto',
             overflow: 'hidden', 
             borderRadius: (shareMode && !isCapturing) ? '24px' : '0px',
             boxShadow: (shareMode && !isCapturing) ? '0 25px 60px rgba(0,0,0,0.8)' : 'none',
