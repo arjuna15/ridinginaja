@@ -27,6 +27,12 @@ function MapBoundsFitter({ path }) {
   const map = useMap();
   useEffect(() => {
     if (path && path.length > 0) {
+      // Lock map controls when viewing saved route
+      map.dragging.disable();
+      map.touchZoom.disable();
+      map.doubleClickZoom.disable();
+      map.scrollWheelZoom.disable();
+
       const timer = setTimeout(() => {
         map.invalidateSize();
         const bounds = L.latLngBounds(path);
@@ -37,7 +43,13 @@ function MapBoundsFitter({ path }) {
         });
       }, 50);
       
-      return () => clearTimeout(timer);
+      return () => {
+        clearTimeout(timer);
+        map.dragging.enable();
+        map.touchZoom.enable();
+        map.doubleClickZoom.enable();
+        map.scrollWheelZoom.enable();
+      };
     }
   }, [path, map]);
   return null;
@@ -1341,7 +1353,18 @@ function App() {
               position: 'absolute',
               top: 0, bottom: 0, left: 0, right: 0
             }}>
-              <MapContainer ref={mapRef} center={currentPosition} zoom={15} zoomControl={false} attributionControl={false} style={{ height: '100%', width: '100%', backgroundColor: 'transparent' }}>
+              <MapContainer 
+                ref={mapRef} 
+                center={currentPosition} 
+                zoom={15} 
+                zoomControl={false} 
+                attributionControl={false} 
+                dragging={!(viewingRoute || shareMode)}
+                touchZoom={!(viewingRoute || shareMode)}
+                doubleClickZoom={!(viewingRoute || shareMode)}
+                scrollWheelZoom={!(viewingRoute || shareMode)}
+                style={{ height: '100%', width: '100%', backgroundColor: 'transparent' }}
+              >
                 {!(shareMode && themeConfigs[shareTheme]?.hideMap) && (
                   <TileLayer
                     url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
