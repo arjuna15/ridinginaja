@@ -23,11 +23,10 @@ const bikeIcon = L.divIcon({
   iconAnchor: [8, 8]
 });
 
-function MapBoundsFitter({ path, isShareMode }) {
+function MapBoundsFitter({ path, isShareMode, shareTheme }) {
   const map = useMap();
   useEffect(() => {
     if (path && path.length > 0) {
-      // Lock map controls when viewing saved route
       if (map.dragging) map.dragging.disable();
       if (map.touchZoom) map.touchZoom.disable();
       if (map.doubleClickZoom) map.doubleClickZoom.disable();
@@ -36,8 +35,18 @@ function MapBoundsFitter({ path, isShareMode }) {
       const fit = () => {
         map.invalidateSize();
         const bounds = L.latLngBounds(path);
+        
+        let pTL = [50, 50];
+        let pBR = [50, 50];
+        
+        if (isShareMode && shareTheme === 'CLASSIC') {
+           pBR = [50, 220]; // Reserve bottom area for title & stats card
+           pTL = [60, 50];
+        }
+
         map.fitBounds(bounds, { 
-          padding: [50, 50],
+          paddingTopLeft: pTL,
+          paddingBottomRight: pBR,
           animate: false
         });
       };
@@ -55,7 +64,7 @@ function MapBoundsFitter({ path, isShareMode }) {
         if (map.scrollWheelZoom) map.scrollWheelZoom.enable();
       };
     }
-  }, [path, map, isShareMode]);
+  }, [path, map, isShareMode, shareTheme]);
   return null;
 }
 
@@ -1377,7 +1386,7 @@ function App() {
                     attribution=""
                   />
                 )}
-                {viewingRoute && viewingRoute.route_path && <MapBoundsFitter path={viewingRoute.route_path} isShareMode={shareMode} />}
+                {viewingRoute && viewingRoute.route_path && <MapBoundsFitter path={viewingRoute.route_path} isShareMode={shareMode} shareTheme={shareTheme} />}
                 <Polyline 
                   positions={viewingRoute?.route_path || routePath} 
                   color={shareMode ? (themeConfigs[shareTheme]?.routeColor || '#4a90e2') : '#4a90e2'} 
