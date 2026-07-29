@@ -651,6 +651,10 @@ function App() {
         } catch (e) {
           console.log("RadioService native plugin not active on web environment");
         }
+
+        const channel = supabase.channel(`radio_room_${targetRoom}`, {
+          config: { presence: { key: session.user.id } }
+        });
         radioChannelRef.current = channel;
 
         const connectToPeer = (targetPeerId, targetName) => {
