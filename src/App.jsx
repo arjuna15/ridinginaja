@@ -1314,8 +1314,8 @@ function App() {
         justifyContent: 'center',
         pointerEvents: 'none',
         zIndex: shareMode ? 50 : 1,
-        transform: (shareMode && !isCapturing) ? 'translateY(-12%) scale(0.55)' : 'none',
-        transition: isCapturing ? 'none' : 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+        transform: (shareMode && !isCapturing) ? 'translateY(-8%) scale(0.68)' : 'none',
+        transition: isCapturing ? 'none' : 'transform 0.3s ease'
       }}>
         <div 
           ref={shareContainerRef} 
