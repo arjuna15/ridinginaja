@@ -230,11 +230,14 @@ function App() {
     if (!shareContainerRef.current) return;
     setIsCapturing(true);
 
+    // Wait for React to re-render shareContainerRef without CSS transform distortion
+    await new Promise(resolve => setTimeout(resolve, 100));
+
     try {
       const bgColor = isTransparentBg ? null : (themeConfigs[shareTheme]?.bg || '#050505');
       const canvas = await html2canvas(shareContainerRef.current, {
         useCORS: true,
-        scale: 2.77, // Renders exactly 1080x1920 Instagram Story HD Resolution
+        scale: 2,
         backgroundColor: bgColor,
         logging: false
       });
@@ -1314,19 +1317,19 @@ function App() {
         justifyContent: 'center',
         pointerEvents: 'none',
         zIndex: shareMode ? 50 : 1,
-        transform: shareMode ? 'translateY(-12%) scale(0.55)' : 'none',
-        transition: 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+        transform: (shareMode && !isCapturing) ? 'translateY(-12%) scale(0.55)' : 'none',
+        transition: isCapturing ? 'none' : 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
       }}>
         <div 
           ref={shareContainerRef} 
           style={{ 
             position: 'relative', 
-            width: shareMode ? '390px' : '100%',
-            height: shareMode ? '693px' : '100%',
+            width: shareMode ? (isCapturing ? '1080px' : '390px') : '100%',
+            height: shareMode ? (isCapturing ? '1920px' : '693px') : '100%',
             overflow: 'hidden', 
-            borderRadius: shareMode ? '24px' : '0px',
-            boxShadow: shareMode ? '0 25px 60px rgba(0,0,0,0.8)' : 'none',
-            background: isTransparentBg ? 'transparent' : (themeConfigs[shareTheme]?.bg || ((shareMode && shareTheme === 'NEON') ? '#000' : 'transparent')),
+            borderRadius: (shareMode && !isCapturing) ? '24px' : '0px',
+            boxShadow: (shareMode && !isCapturing) ? '0 25px 60px rgba(0,0,0,0.8)' : 'none',
+            background: isTransparentBg ? 'transparent' : (themeConfigs[shareTheme]?.bg || ((shareMode && shareTheme === 'NEON') ? '#000' : '#050505')),
             pointerEvents: shareMode ? 'none' : 'auto' // Prevent map dragging during share preview
           }}
         >
