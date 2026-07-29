@@ -702,8 +702,9 @@ function App() {
 
     } catch (err) {
       console.error(err);
+      setInRadio(false);
       setRadioStatus("Failed to access Microphone");
-      alert("Gagal mengakses mikrofon. Pastikan izin mic diberikan di browser.");
+      alert("Gagal mengakses mikrofon: " + err.message);
     }
   };
 
