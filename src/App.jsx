@@ -23,31 +23,23 @@ const bikeIcon = L.divIcon({
   iconAnchor: [8, 8]
 });
 
-function MapBoundsFitter({ path, isShareMode, shareTheme }) {
+function MapBoundsFitter({ path }) {
   const map = useMap();
   useEffect(() => {
     if (path && path.length > 0) {
-      // Force Leaflet to recalculate container size in case 'top' changed
       const timer = setTimeout(() => {
         map.invalidateSize();
         const bounds = L.latLngBounds(path);
-        let pTL = [40, 40];
-        let pBR = [40, 40];
-        
-        if (isShareMode) {
-           pBR = [40, shareTheme === 'CLASSIC' ? 180 : 60]; // Padding above bottom stats card
-        }
         
         map.fitBounds(bounds, { 
-          paddingTopLeft: pTL,
-          paddingBottomRight: pBR,
+          padding: [40, 40],
           animate: false
         });
       }, 50);
       
       return () => clearTimeout(timer);
     }
-  }, [path, map, isShareMode, shareTheme]);
+  }, [path, map]);
   return null;
 }
 
@@ -1358,7 +1350,7 @@ function App() {
                     attribution=""
                   />
                 )}
-                {viewingRoute && viewingRoute.route_path && <MapBoundsFitter path={viewingRoute.route_path} isShareMode={shareMode} shareTheme={shareTheme} />}
+                {viewingRoute && viewingRoute.route_path && <MapBoundsFitter path={viewingRoute.route_path} />}
                 <Polyline 
                   positions={viewingRoute?.route_path || routePath} 
                   color={shareMode ? (themeConfigs[shareTheme]?.routeColor || '#4a90e2') : '#4a90e2'} 
