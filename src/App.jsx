@@ -1441,11 +1441,9 @@ function App() {
       </div> {/* END OUTER SHARE PREVIEW CONTAINER */}
 
 
-      {/* INTERACTIVE UI LAYER (Will NOT be captured by html2canvas) */}
-      <div className="content-layer" style={{ pointerEvents: shareMode ? 'none' : 'auto' }}>
-        
-        {/* Hide Top Nav during Share Mode */}
-        {!shareMode && (
+      {/* INTERACTIVE UI LAYER (Hidden during Share Mode to prevent card overlapping) */}
+      {!shareMode && (
+        <div className="content-layer">
           <header className="top-nav">
             <div className="avatar-initial">
               {(displayName?.trim()?.[0] || session?.user?.email?.[0] || 'J').toUpperCase()}
@@ -1458,12 +1456,9 @@ function App() {
               <LogOut size={20} />
             </button>
           </header>
-        )}
 
-        {renderContent()}
+          {renderContent()}
 
-        {/* Hide Bottom Nav during Share Mode */}
-        {!shareMode && (
           <nav className="bottom-nav">
             {navItems.map((item) => (
               <div 
@@ -1476,8 +1471,8 @@ function App() {
               </div>
             ))}
           </nav>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* SHARE EDITOR CONTROLS (Appears above everything when shareMode is active) */}
       {shareMode && (
