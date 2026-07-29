@@ -147,7 +147,17 @@ function App() {
   const [isMuted, setIsMuted] = useState(false);
   const [audioInputs, setAudioInputs] = useState([]);
   const [selectedAudioInput, setSelectedAudioInput] = useState('');
-  const localStreamRef = useRef(null);
+  const [roomCode, setRoomCode] = useState('');
+  const [activeRoomCode, setActiveRoomCode] = useState('');
+  
+  const generateRandomCode = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let res = 'MOKAT-';
+    for (let i = 0; i < 4; i++) {
+      res += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setRoomCode(res);
+  };
   const peerInstanceRef = useRef(null);
   const radioChannelRef = useRef(null);
   const callsRef = useRef({});
@@ -593,9 +603,11 @@ function App() {
       
       peer.on('open', (id) => {
         setInRadio(true);
-        setRadioStatus("Online in Intercom Room");
+        const targetRoom = roomCode.trim().toUpperCase() || 'MOKAT-PUBLIC';
+        setActiveRoomCode(targetRoom);
+        setRadioStatus(`Online in Room [${targetRoom}]`);
 
-        const channel = supabase.channel('radio_room', {
+        const channel = supabase.channel(`radio_room_${targetRoom}`, {
           config: { presence: { key: session.user.id } }
         });
         radioChannelRef.current = channel;
@@ -1054,9 +1066,35 @@ function App() {
           </div>
 
           {!inRadio ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <button className="glass-button primary" onClick={joinRadio} style={{ padding: '16px', fontSize: '16px', fontWeight: 'bold' }}>
-                Connect to Room
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ background: 'rgba(0,0,0,0.3)', padding: '16px', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <label style={{ fontSize: '11px', color: '#aaa', textTransform: 'uppercase', letterSpacing: '1.5px', fontWeight: '800', display: 'block', marginBottom: '8px', textAlign: 'center' }}>
+                  🔑 Kode Room Rahasia / Private
+                </label>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <input 
+                    className="glass-input" 
+                    placeholder="Masukkan Kode Room (contoh: MOKAT-7890)" 
+                    value={roomCode} 
+                    onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+                    style={{ textAlign: 'center', fontSize: '14px', fontWeight: '800', letterSpacing: '1px' }}
+                  />
+                  <button 
+                    className="glass-button" 
+                    onClick={generateRandomCode}
+                    title="Generate Kode Random"
+                    style={{ padding: '0 16px', fontSize: '12px', background: 'rgba(59,130,246,0.2)', border: '1px solid rgba(59,130,246,0.4)', color: '#3b82f6', flexShrink: 0 }}
+                  >
+                    🎲 Random
+                  </button>
+                </div>
+                <p style={{ fontSize: '11px', color: '#666', textAlign: 'center', marginTop: '8px' }}>
+                  Hanya pengguna yang memegang Kode Room yang sama yang bisa saling mendengar & ngobrol.
+                </p>
+              </div>
+
+              <button className="glass-button primary" onClick={joinRadio} style={{ padding: '16px', fontSize: '15px', fontWeight: 'bold' }}>
+                Join Private Intercom Room
               </button>
               <button className="glass-button" onClick={testAudioSound} style={{ padding: '12px', fontSize: '13px', background: 'rgba(255,255,255,0.05)' }}>
                 🔊 Test HP Speaker Sound
