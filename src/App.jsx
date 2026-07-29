@@ -231,31 +231,15 @@ function App() {
     setIsCapturing(true);
 
     try {
-      // 1. Capture target element at current display scale
-      const rawCanvas = await html2canvas(shareContainerRef.current, {
+      // Capture element at scale 2.77 (390px * 2.77 = 1080px width, 693px * 2.77 = 1920px height)
+      const canvas = await html2canvas(shareContainerRef.current, {
         useCORS: true,
-        scale: window.devicePixelRatio || 2,
+        scale: 2.77,
         backgroundColor: isTransparentBg ? null : (themeConfigs[shareTheme]?.bg || '#050505'),
         logging: false
       });
-
-      // 2. Create offscreen canvas strictly sized to 1080x1920 (9:16 HD Story format)
-      const storyCanvas = document.createElement('canvas');
-      storyCanvas.width = 1080;
-      storyCanvas.height = 1920;
-      const ctx = storyCanvas.getContext('2d');
-
-      if (ctx) {
-        if (!isTransparentBg) {
-          ctx.fillStyle = themeConfigs[shareTheme]?.bg || '#050505';
-          ctx.fillRect(0, 0, 1080, 1920);
-        }
-        
-        // Draw raw canvas scaled cleanly into 1080x1920
-        ctx.drawImage(rawCanvas, 0, 0, 1080, 1920);
-      }
       
-      const image = storyCanvas.toDataURL("image/png");
+      const image = canvas.toDataURL("image/png");
       
       const a = document.createElement('a');
       a.href = image;
