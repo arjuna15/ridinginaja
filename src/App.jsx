@@ -5,7 +5,7 @@ import L from 'leaflet';
 import html2canvas from 'html2canvas';
 import { Peer } from 'peerjs';
 import 'leaflet/dist/leaflet.css';
-import { registerPlugin } from '@capacitor/core';
+import { registerPlugin, Capacitor } from '@capacitor/core';
 import { supabase } from './supabaseClient';
 import bikeDatabase from './bikeDatabase';
 
@@ -646,10 +646,8 @@ function App() {
         setActiveRoomCode(targetRoom);
         setRadioStatus(`Online in Room [${targetRoom}]`);
         // Start Android Foreground Service so radio doesn't disconnect when app is minimized/screen locked
-        try {
-          RadioService.startService({ roomCode: targetRoom });
-        } catch (e) {
-          console.log("RadioService native plugin not active on web environment");
+        if (Capacitor.isNativePlatform()) {
+          RadioService.startService({ roomCode: targetRoom }).catch(() => {});
         }
 
         const channel = supabase.channel(`radio_room_${targetRoom}`, {
@@ -807,10 +805,8 @@ function App() {
       const audio = document.getElementById(`audio-${peerId}`);
       if (audio) audio.remove();
     });
-    try {
-      RadioService.stopService();
-    } catch (e) {
-      console.log("RadioService native plugin not active on web environment");
+    if (Capacitor.isNativePlatform()) {
+      RadioService.stopService().catch(() => {});
     }
     callsRef.current = {};
     setRadioPeers([]);
