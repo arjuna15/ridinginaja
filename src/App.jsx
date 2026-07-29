@@ -95,6 +95,7 @@ function App() {
   const [storyTitle, setStoryTitle] = useState('Afternoon Ride');
   const [isTransparentBg, setIsTransparentBg] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
+  const [isEditorCollapsed, setIsEditorCollapsed] = useState(false);
   
   const [currentPosition, setCurrentPosition] = useState([-6.2088, 106.8456]); 
   const [routePath, setRoutePath] = useState([]); 
@@ -1473,58 +1474,99 @@ function App() {
         </div>
       )}
 
-      {/* SHARE EDITOR CONTROLS (Appears above everything when shareMode is active) */}
+      {/* SHARE EDITOR CONTROLS (Collapsible Drawer) */}
       {shareMode && (
-        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: '#111', zIndex: 100, padding: '20px', borderTopLeftRadius: '24px', borderTopRightRadius: '24px', pointerEvents: 'auto' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-             <h3 style={{ fontSize: '16px', fontWeight: 'bold' }}>Style Editor</h3>
-             <button onClick={() => setShareMode(false)} style={{ background: 'transparent', border: 'none', color: '#fff', padding: '4px' }}>
-               <X size={24} />
-             </button>
-          </div>
-
-          <div style={{ marginBottom: '12px' }}>
-             <label style={{ fontSize: '11px', color: '#888', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '700', display: 'block', marginBottom: '4px' }}>Title Story:</label>
-             <input 
-               className="glass-input" 
-               value={storyTitle} 
-               onChange={(e) => setStoryTitle(e.target.value)} 
-               placeholder="e.g. Sunmori Lembang, Night Run, Friday Ride..." 
-               style={{ fontSize: '13px', padding: '8px 12px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)', color: '#fff', borderRadius: '12px', width: '100%' }}
-             />
-          </div>
-          
-          <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '20px', WebkitOverflowScrolling: 'touch' }}>
-             {Object.entries(themeConfigs).map(([key, cfg]) => (
-               <button key={key} onClick={() => setShareTheme(key)} className="glass-button" style={{ 
-                 padding: '10px 16px', minWidth: '80px', flexShrink: 0,
-                 background: shareTheme === key ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.04)',
-                 border: shareTheme === key ? `2px solid ${cfg.color}` : '1px solid rgba(255,255,255,0.08)',
-                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px',
-                 borderRadius: '16px', fontSize: '11px', fontWeight: '700'
-               }}>
-                 <span style={{ width: '14px', height: '14px', borderRadius: '50%', background: cfg.color, boxShadow: shareTheme === key ? `0 0 12px ${cfg.color}` : 'none' }}></span>
-                 {cfg.label}
-               </button>
-             ))}
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '12px', color: '#aaa', fontWeight: '600' }}>Background:</span>
+        <div style={{ 
+          position: 'absolute', 
+          bottom: 0, left: 0, right: 0, 
+          background: 'rgba(17, 17, 17, 0.95)', 
+          backdropFilter: 'blur(20px)',
+          zIndex: 100, 
+          padding: isEditorCollapsed ? '12px 20px' : '20px', 
+          borderTopLeftRadius: '24px', 
+          borderTopRightRadius: '24px', 
+          borderTop: '1px solid rgba(255,255,255,0.1)',
+          pointerEvents: 'auto',
+          transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+        }}>
+          {/* HEADER BAR WITH TOGGLE COLLAPSE & CLOSE */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: isEditorCollapsed ? 0 : '14px' }}>
+             <div 
+               onClick={() => setIsEditorCollapsed(!isEditorCollapsed)}
+               style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', userSelect: 'none' }}
+             >
+                <h3 style={{ fontSize: '16px', fontWeight: 'bold', margin: 0 }}>Style Editor</h3>
                 <button 
-                  onClick={() => setIsTransparentBg(!isTransparentBg)} 
-                  className="glass-button" 
-                  style={{ padding: '4px 12px', fontSize: '11px', fontWeight: '700', background: isTransparentBg ? '#4a90e2' : 'rgba(255,255,255,0.06)', color: isTransparentBg ? '#fff' : '#aaa' }}
+                  style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', padding: '4px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  title={isEditorCollapsed ? "Expand Editor" : "Minimize Editor"}
                 >
-                  {isTransparentBg ? '✨ Transparent PNG (Sticker)' : '⬛ Solid Dark (Default)'}
+                  {isEditorCollapsed ? <ChevronDown size={18} style={{ transform: 'rotate(180deg)' }} /> : <ChevronDown size={18} />}
                 </button>
-              </div>
-           </div>
+             </div>
 
-           <button onClick={generateShareImage} className="glass-button primary" style={{ width: '100%', padding: '16px', fontSize: '16px', fontWeight: 'bold', display: 'flex', justifyContent: 'center', gap: '8px' }}>
-              {isCapturing ? 'Generating Image...' : <><Download size={20} /> Download SG</>}
-           </button>
+             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                {isEditorCollapsed && (
+                  <button 
+                    onClick={generateShareImage} 
+                    className="glass-button primary" 
+                    style={{ padding: '6px 14px', fontSize: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}
+                  >
+                    {isCapturing ? 'Saving...' : <><Download size={14} /> Download SG</>}
+                  </button>
+                )}
+                <button onClick={() => { setShareMode(false); setIsEditorCollapsed(false); }} style={{ background: 'transparent', border: 'none', color: '#888', padding: '4px', cursor: 'pointer' }}>
+                  <X size={22} />
+                </button>
+             </div>
+          </div>
+
+          {/* EXPANDABLE BODY CONTENT */}
+          {!isEditorCollapsed && (
+            <>
+              <div style={{ marginBottom: '12px' }}>
+                 <label style={{ fontSize: '11px', color: '#888', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '700', display: 'block', marginBottom: '4px' }}>Title Story:</label>
+                 <input 
+                   className="glass-input" 
+                   value={storyTitle} 
+                   onChange={(e) => setStoryTitle(e.target.value)} 
+                   placeholder="e.g. Sunmori Lembang, Night Run, Friday Ride..." 
+                   style={{ fontSize: '13px', padding: '8px 12px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)', color: '#fff', borderRadius: '12px', width: '100%' }}
+                 />
+              </div>
+              
+              <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '16px', WebkitOverflowScrolling: 'touch' }}>
+                 {Object.entries(themeConfigs).map(([key, cfg]) => (
+                   <button key={key} onClick={() => setShareTheme(key)} className="glass-button" style={{ 
+                     padding: '10px 16px', minWidth: '80px', flexShrink: 0,
+                     background: shareTheme === key ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.04)',
+                     border: shareTheme === key ? `2px solid ${cfg.color}` : '1px solid rgba(255,255,255,0.08)',
+                     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px',
+                     borderRadius: '16px', fontSize: '11px', fontWeight: '700'
+                   }}>
+                     <span style={{ width: '14px', height: '14px', borderRadius: '50%', background: cfg.color, boxShadow: shareTheme === key ? `0 0 12px ${cfg.color}` : 'none' }}></span>
+                     {cfg.label}
+                   </button>
+                 ))}
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '12px', color: '#aaa', fontWeight: '600' }}>Background:</span>
+                    <button 
+                      onClick={() => setIsTransparentBg(!isTransparentBg)} 
+                      className="glass-button" 
+                      style={{ padding: '4px 12px', fontSize: '11px', fontWeight: '700', background: isTransparentBg ? '#4a90e2' : 'rgba(255,255,255,0.06)', color: isTransparentBg ? '#fff' : '#aaa' }}
+                    >
+                      {isTransparentBg ? '✨ Transparent PNG (Sticker)' : '⬛ Solid Dark (Default)'}
+                    </button>
+                  </div>
+               </div>
+
+               <button onClick={generateShareImage} className="glass-button primary" style={{ width: '100%', padding: '14px', fontSize: '15px', fontWeight: 'bold', display: 'flex', justifyContent: 'center', gap: '8px' }}>
+                  {isCapturing ? 'Generating Image...' : <><Download size={18} /> Download SG</>}
+               </button>
+            </>
+          )}
         </div>
       )}
 
