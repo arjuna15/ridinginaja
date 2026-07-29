@@ -21,9 +21,13 @@
 }
 
 body {
-  background: var(--bg-dark);
+  background: #000;
   color: #fff;
   overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
 }
 
 /* Animations */
@@ -49,14 +53,17 @@ body {
   to { opacity: 1; transform: scale(1); }
 }
 
-/* Base App Layout */
+/* Base App Layout (Mobile Container Frame on Desktop & Mobile) */
 .app-container {
   display: flex;
   flex-direction: column;
   height: 100dvh; /* For mobile PWA */
   width: 100vw;
+  max-width: 480px; /* Force mobile phone width on desktop */
   position: relative;
   background: var(--bg-gradient);
+  box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
+  overflow: hidden;
 }
 
 .map-background {
