@@ -230,21 +230,32 @@ function App() {
     if (!shareContainerRef.current) return;
     setIsCapturing(true);
 
-    // Wait for React to re-render shareContainerRef to exact 1080x1920 canvas size
-    await new Promise(resolve => setTimeout(resolve, 120));
-
     try {
-      const bgColor = isTransparentBg ? null : (themeConfigs[shareTheme]?.bg || '#050505');
-      const canvas = await html2canvas(shareContainerRef.current, {
+      // 1. Capture target element at current display scale
+      const rawCanvas = await html2canvas(shareContainerRef.current, {
         useCORS: true,
-        scale: 1, // 1:1 pixel rendering for 1080x1920
-        width: 1080,
-        height: 1920,
-        backgroundColor: bgColor,
+        scale: window.devicePixelRatio || 2,
+        backgroundColor: isTransparentBg ? null : (themeConfigs[shareTheme]?.bg || '#050505'),
         logging: false
       });
+
+      // 2. Create offscreen canvas strictly sized to 1080x1920 (9:16 HD Story format)
+      const storyCanvas = document.createElement('canvas');
+      storyCanvas.width = 1080;
+      storyCanvas.height = 1920;
+      const ctx = storyCanvas.getContext('2d');
+
+      if (ctx) {
+        if (!isTransparentBg) {
+          ctx.fillStyle = themeConfigs[shareTheme]?.bg || '#050505';
+          ctx.fillRect(0, 0, 1080, 1920);
+        }
+        
+        // Draw raw canvas scaled cleanly into 1080x1920
+        ctx.drawImage(rawCanvas, 0, 0, 1080, 1920);
+      }
       
-      const image = canvas.toDataURL("image/png");
+      const image = storyCanvas.toDataURL("image/png");
       
       const a = document.createElement('a');
       a.href = image;
@@ -1326,12 +1337,12 @@ function App() {
           ref={shareContainerRef} 
           style={{ 
             position: 'relative', 
-            width: shareMode ? (isCapturing ? '1080px' : '390px') : '100%',
-            height: shareMode ? (isCapturing ? '1920px' : '693px') : '100%',
+            width: shareMode ? '390px' : '100%',
+            height: shareMode ? '693px' : '100%',
             aspectRatio: shareMode ? '9 / 16' : 'auto',
             overflow: 'hidden', 
-            borderRadius: (shareMode && !isCapturing) ? '24px' : '0px',
-            boxShadow: (shareMode && !isCapturing) ? '0 25px 60px rgba(0,0,0,0.8)' : 'none',
+            borderRadius: shareMode ? '24px' : '0px',
+            boxShadow: shareMode ? '0 25px 60px rgba(0,0,0,0.8)' : 'none',
             background: isTransparentBg ? 'transparent' : (themeConfigs[shareTheme]?.bg || ((shareMode && shareTheme === 'NEON') ? '#000' : '#050505')),
             pointerEvents: shareMode ? 'none' : 'auto' // Prevent map dragging during share preview
           }}
