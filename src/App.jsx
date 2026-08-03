@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Square, Map as MapIcon, User, Activity, Navigation, ChevronRight, Zap, Bike, LogOut, LocateFixed, Camera, LayoutTemplate, X, Download, Headset, Mic, MicOff, PhoneOff, Search, Settings, Mail, Ruler, Moon, Info, Shield, ChevronDown, Trash2, AlertTriangle, Fuel, Award, Compass, Radio, Wrench } from 'lucide-react';
+import { Play, Pause, Square, Map as MapIcon, Activity, Navigation, ChevronRight, Zap, Bike, LogOut, LocateFixed, LayoutTemplate, X, Download, Headset, Mic, MicOff, PhoneOff, Search, Settings, Mail, Ruler, Moon, Info, Shield, ChevronDown, Trash2, AlertTriangle, Fuel, Wrench } from 'lucide-react';
 import { MapContainer, TileLayer, Polyline, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import html2canvas from 'html2canvas';
 import { Peer } from 'peerjs';
+import { useRegisterSW } from 'virtual:pwa-register/react';
 import 'leaflet/dist/leaflet.css';
 import { registerPlugin, Capacitor } from '@capacitor/core';
 import { supabase } from './supabaseClient';
@@ -85,6 +86,19 @@ function App() {
   const mapRef = useRef(null);
   const shareContainerRef = useRef(null); 
 
+  // PWA Update Prompt
+  const {
+    needRefresh: [needRefresh, setNeedRefresh],
+    updateServiceWorker,
+  } = useRegisterSW({
+    onRegistered(r) {
+      console.log('SW Registered:', r);
+    },
+    onRegisterError(error) {
+      console.log('SW registration error', error);
+    },
+  });
+
   // Auth State
   const [session, setSession] = useState(null);
   const [authEmail, setAuthEmail] = useState('');
@@ -95,10 +109,19 @@ function App() {
   // App State
   const [activeTab, setActiveTab] = useState('RIDE');
   const [isTracking, setIsTracking] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [speed, setSpeed] = useState(0); 
+  const [topSpeed, setTopSpeed] = useState(0);
   const [distance, setDistance] = useState(0); 
   const [time, setTime] = useState(0); 
   const [statusText, setStatusText] = useState("Locating...");
+  const [mapStyle, setMapStyle] = useState('DARK'); // DARK, SATELLITE, STREET
+  
+  // God Tier Features State
+  const [maxLeanAngle, setMaxLeanAngle] = useState(0);
+  const [currentLeanAngle, setCurrentLeanAngle] = useState(0);
+  const [maxAltitude, setMaxAltitude] = useState(0);
+  const [groupLocations, setGroupLocations] = useState({}); // { userId: {lat, lng, speed} }
   
   // Share Export State
   const [shareMode, setShareMode] = useState(false);
@@ -118,24 +141,20 @@ function App() {
   const [newBike, setNewBike] = useState({ brand: '', name: '', type: '' });
   const [bikeSearch, setBikeSearch] = useState('');
   const [viewingRoute, setViewingRoute] = useState(null);
+  
+  // Tuning / Bore Up State
+  const [tuningConfigs, setTuningConfigs] = useState(() => JSON.parse(localStorage.getItem('mokat_tuning_configs') || '{}'));
+  const [expandedTuningBike, setExpandedTuningBike] = useState(null);
 
   // SOS Emergency State
   const [showSosModal, setShowSosModal] = useState(false);
   const [sosCountdown, setSosCountdown] = useState(5);
   const [isSosActive, setIsSosActive] = useState(false);
-  const [emergencyContact, setEmergencyContact] = useState(() => localStorage.getItem('mokat_emergency_contact') || '');
+  const [emergencyContact, setEmergencyContact] = useState('');
   const sosTimerRef = useRef(null);
 
-  // SPBU & Rest Area Finder State
-  const [nearbyPlaces, setNearbyPlaces] = useState([]);
-  const [showPlacesModal, setShowPlacesModal] = useState(false);
-
-  // Maintenance & Achievements State
-  const [selectedBikeForMaint, setSelectedBikeForMaint] = useState(null);
-  const [lastOilChangeKm, setLastOilChangeKm] = useState(() => localStorage.getItem('mokat_oil_km') || 0);
-
-  // Radio Channel State
-  const [radioChannel, setRadioChannel] = useState('Ch-1 Touring');
+  // Maintenance State
+  const [lastOilChangeKm, setLastOilChangeKm] = useState(0);
 
   // Settings State
   const [displayName, setDisplayName] = useState('');
@@ -182,6 +201,13 @@ function App() {
     if (session?.user) {
       const savedName = localStorage.getItem('mokat_name_' + session.user.id) || session.user.user_metadata?.display_name || session.user.email?.split('@')[0] || '';
       setDisplayName(savedName);
+      
+      const savedSos = localStorage.getItem('mokat_emergency_contact_' + session.user.id) || localStorage.getItem('mokat_emergency_contact') || '';
+      setEmergencyContact(savedSos);
+
+      const savedOil = localStorage.getItem('mokat_oil_km_' + session.user.id) || localStorage.getItem('mokat_oil_km') || 0;
+      setLastOilChangeKm(Number(savedOil) || 0);
+
       fetchCloudData();
       navigator.geolocation.getCurrentPosition(
         (pos) => {
@@ -213,11 +239,19 @@ function App() {
   const fetchCloudData = async () => {
     if (!session?.user?.id) return;
     const uid = session.user.id;
-    const { data: bikeData } = await supabase.from('motorcycles').select('*').eq('user_id', uid).order('created_at', { ascending: false });
-    if (bikeData) setBikes(bikeData);
+    const { data: bikeData, error: bikeError } = await supabase.from('motorcycles').select('*').eq('user_id', uid).order('created_at', { ascending: false });
+    if (bikeError) {
+      console.error('Failed to fetch bikes:', bikeError);
+    } else if (bikeData) {
+      setBikes(bikeData);
+    }
 
-    const { data: rideData } = await supabase.from('rides').select('*').eq('user_id', uid).order('created_at', { ascending: false });
-    if (rideData) setRides(rideData);
+    const { data: rideData, error: rideError } = await supabase.from('rides').select('*').eq('user_id', uid).order('created_at', { ascending: false });
+    if (rideError) {
+      console.error('Failed to fetch rides:', rideError);
+    } else if (rideData) {
+      setRides(rideData);
+    }
   };
 
   // Re-fetch data when app comes back from background (visibility change)
@@ -250,7 +284,8 @@ function App() {
           // If rate limit error occurs during signup, attempt direct login as account might already be created
           const { error: loginError } = await supabase.auth.signInWithPassword({ email: authEmail, password: authPassword });
           if (!loginError) {
-            // Logged in successfully!
+            // Rate-limited signup but login succeeded — user is now authenticated
+            setStatusText('Login berhasil!');
           } else {
             alert("Batas pengiriman email server penuh. Silakan langsung pindah ke menu 'Sign In' dan masukkan email/password kamu!");
             setIsLoginMode(true);
@@ -260,7 +295,8 @@ function App() {
         }
       } else {
         if (data?.session) {
-          // Logged in immediately
+          // Logged in immediately after signup
+          setStatusText('Akun berhasil! Selamat datang.');
         } else {
           alert("Akun berhasil dibuat! Silakan coba Sign In sekarang.");
           setIsLoginMode(true);
@@ -307,6 +343,43 @@ function App() {
     setSosCountdown(5);
   };
 
+  // God-Tier Sensor Tracking (Lean Angle & Crash Detection)
+  useEffect(() => {
+    if (!isTracking || isPaused) return;
+
+    const handleOrientation = (e) => {
+      if (e.gamma !== null) {
+        let angle = Math.abs(Math.round(e.gamma));
+        if (angle > 90) angle = 180 - angle;
+        setCurrentLeanAngle(angle);
+        setMaxLeanAngle(prev => Math.max(prev, angle));
+      }
+    };
+
+    const handleMotion = (e) => {
+      if (e.acceleration) {
+        const ax = e.acceleration.x || 0;
+        const ay = e.acceleration.y || 0;
+        const az = e.acceleration.z || 0;
+        const gForce = Math.sqrt(ax * ax + ay * ay + az * az) / 9.81;
+
+        if (gForce > 3.0 && speed < 10) {
+           if (!showSosModal) {
+             handleTriggerSos();
+           }
+        }
+      }
+    };
+
+    window.addEventListener('deviceorientation', handleOrientation);
+    window.addEventListener('devicemotion', handleMotion);
+
+    return () => {
+      window.removeEventListener('deviceorientation', handleOrientation);
+      window.removeEventListener('devicemotion', handleMotion);
+    };
+  }, [isTracking, isPaused, speed, showSosModal]);
+
   // SPBU & Rest Area Finder
   const handleFindNearbyPlaces = (type) => {
     const [lat, lng] = currentPosition;
@@ -321,6 +394,9 @@ function App() {
   // Maintenance Handler
   const handleResetOilKm = (totalKm) => {
     setLastOilChangeKm(totalKm);
+    if (session?.user?.id) {
+      localStorage.setItem('mokat_oil_km_' + session.user.id, totalKm);
+    }
     localStorage.setItem('mokat_oil_km', totalKm);
     alert("Berhasil mereset riwayat pergantian Oli Mesin!");
   };
@@ -397,10 +473,12 @@ function App() {
     }
     setViewingRoute(null);
     setIsTracking(true);
+    setIsPaused(false);
     setStatusText("Recording...");
     setRoutePath([]);
     setDistance(0);
     setTime(0);
+    setTopSpeed(0);
 
     handleCenterMap();
 
@@ -420,7 +498,9 @@ function App() {
         });
 
         if (gpsSpeed !== null && gpsSpeed > 0) {
-          setSpeed(Math.round(gpsSpeed * 3.6));
+          const currentKmh = Math.round(gpsSpeed * 3.6);
+          setSpeed(currentKmh);
+          setTopSpeed(prevMax => Math.max(prevMax, currentKmh));
         } else {
           setSpeed(0);
         }
@@ -436,6 +516,91 @@ function App() {
             setDistance(prev => prev + (distMetres / 1000));
           }
         }
+        if (position.coords.altitude !== null) {
+          setMaxAltitude(prev => Math.max(prev, Math.round(position.coords.altitude)));
+        }
+
+        if (radioChannelRef.current && activeRoomCode) {
+           radioChannelRef.current.send({
+             type: 'broadcast',
+             event: 'location',
+             payload: { userId: session?.user?.id, lat: latitude, lng: longitude, speed: gpsSpeed ? Math.round(gpsSpeed * 3.6) : 0 }
+           });
+        }
+        
+        prevPosRef.current = { latitude, longitude };
+      },
+      (error) => {
+        console.error(error);
+        setStatusText("GPS Signal Lost");
+      },
+      { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }
+    );
+  };
+
+  const pauseTracking = () => {
+    setIsPaused(true);
+    setStatusText("Paused");
+    setSpeed(0);
+    if (watchIdRef.current !== null) {
+      navigator.geolocation.clearWatch(watchIdRef.current);
+      watchIdRef.current = null;
+    }
+    if (timerRef.current !== null) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+  };
+
+  const resumeTracking = () => {
+    setIsPaused(false);
+    setStatusText("Recording...");
+
+    timerRef.current = setInterval(() => {
+      setTime(prev => prev + 1);
+    }, 1000);
+
+    watchIdRef.current = navigator.geolocation.watchPosition(
+      (position) => {
+        const { latitude, longitude, speed: gpsSpeed } = position.coords;
+        const newPos = [latitude, longitude];
+        
+        setCurrentPosition(newPos);
+        setRoutePath(prev => {
+           if(prev.length > 0 && prev[prev.length-1][0] === newPos[0]) return prev;
+           return [...prev, newPos];
+        });
+
+        if (gpsSpeed !== null && gpsSpeed > 0) {
+          const currentKmh = Math.round(gpsSpeed * 3.6);
+          setSpeed(currentKmh);
+          setTopSpeed(prevMax => Math.max(prevMax, currentKmh));
+        } else {
+          setSpeed(0);
+        }
+
+        if (prevPosRef.current) {
+          const distMetres = calculateDistance(
+            prevPosRef.current.latitude,
+            prevPosRef.current.longitude,
+            latitude,
+            longitude
+          );
+          if (distMetres > 2) { 
+            setDistance(prev => prev + (distMetres / 1000));
+          }
+        }
+        if (position.coords.altitude !== null) {
+          setMaxAltitude(prev => Math.max(prev, Math.round(position.coords.altitude)));
+        }
+
+        if (radioChannelRef.current && activeRoomCode) {
+           radioChannelRef.current.send({
+             type: 'broadcast',
+             event: 'location',
+             payload: { userId: session?.user?.id, lat: latitude, lng: longitude, speed: gpsSpeed ? Math.round(gpsSpeed * 3.6) : 0 }
+           });
+        }
         
         prevPosRef.current = { latitude, longitude };
       },
@@ -449,6 +614,7 @@ function App() {
 
   const stopTracking = async () => {
     setIsTracking(false);
+    setIsPaused(false);
     
     if (distance > 0 || time > 2) {
       setStatusText("Saving Ride...");
@@ -458,6 +624,7 @@ function App() {
         distance: distance,
         time: time,
         avg_speed: avgSpeed,
+        top_speed: topSpeed,
         route_path: routePath
       };
       
@@ -509,11 +676,24 @@ function App() {
   };
 
   const handleDeleteBike = async (bikeId) => {
+    if (!confirm('Yakin ingin menghapus motor ini dari garage?')) return;
     const { error } = await supabase.from('motorcycles').delete().eq('id', bikeId);
     if (!error) {
       setBikes(bikes.filter(b => b.id !== bikeId));
     } else {
-      console.error("Failed to delete bike:", error);
+      console.error('Failed to delete bike:', error);
+      alert('Gagal menghapus motor: ' + error.message);
+    }
+  };
+
+  const handleDeleteRide = async (rideId) => {
+    if (!confirm('Yakin ingin menghapus riwayat ride ini?')) return;
+    const { error } = await supabase.from('rides').delete().eq('id', rideId);
+    if (!error) {
+      setRides(rides.filter(r => r.id !== rideId));
+    } else {
+      console.error('Failed to delete ride:', error);
+      alert('Gagal menghapus ride: ' + error.message);
     }
   };
 
@@ -670,6 +850,21 @@ function App() {
           }
         });
 
+        // Listen for Live Radar (Group Location)
+        channel.on('broadcast', { event: 'location' }, (payload) => {
+           if (payload.payload) {
+             setGroupLocations(prev => ({
+               ...prev,
+               [payload.payload.userId]: {
+                 lat: payload.payload.lat,
+                 lng: payload.payload.lng,
+                 speed: payload.payload.speed,
+                 updatedAt: Date.now()
+               }
+             }));
+           }
+        });
+
         const syncPeers = () => {
           const state = channel.presenceState();
           for (const key in state) {
@@ -811,6 +1006,8 @@ function App() {
     callsRef.current = {};
     setRadioPeers([]);
     setInRadio(false);
+    setActiveRoomCode('');
+    setRadioStatus('Offline');
   };
 
   const toggleMute = () => {
@@ -978,6 +1175,22 @@ function App() {
     };
   };
 
+  const triggerCopilot = () => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const unitStr = distanceUnit === 'km' ? 'kilometer' : 'mil';
+      const speedStr = speedUnit === 'kmh' ? 'kilometer per jam' : 'mil per jam';
+      const tuningStr = Object.keys(tuningConfigs).length > 0 ? 'Mode bore up aktif, hati-hati bensin boros.' : 'Kondisi mesin standar.';
+      
+      const msg = new SpeechSynthesisUtterance(`Halo Mokat! Jarak tempuh saat ini ${(convertDistance(distance)).toFixed(1)} ${unitStr}. Kecepatan ${convertSpeed(speed)} ${speedStr}. ${tuningStr}`);
+      msg.lang = 'id-ID';
+      msg.rate = 0.9;
+      window.speechSynthesis.speak(msg);
+    } else {
+      alert("Browser kamu tidak mendukung Voice Co-Pilot.");
+    }
+  };
+
   const renderContent = () => {
     if (activeTab === 'RIDE') {
       return (
@@ -1008,6 +1221,26 @@ function App() {
             <div style={{ position: 'absolute', right: '16px', top: '100px', display: 'flex', flexDirection: 'column', gap: '10px', zIndex: 30 }}>
               <button 
                 className="glass-button" 
+                onClick={() => {
+                  const styles = ['DARK', 'SATELLITE', 'STREET'];
+                  const next = styles[(styles.indexOf(mapStyle) + 1) % styles.length];
+                  setMapStyle(next);
+                }}
+                title={`Map Style: ${mapStyle}`}
+                style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'rgba(0,0,0,0.65)', border: '1px solid rgba(255,255,255,0.2)', boxShadow: '0 8px 20px rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '10px', fontWeight: '800' }}
+              >
+                {mapStyle === 'DARK' ? '🌙' : mapStyle === 'SATELLITE' ? '🛰️' : '🗺️'}
+              </button>
+              <button 
+                className="glass-button" 
+                onClick={triggerCopilot}
+                title="AI Voice Co-Pilot"
+                style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'linear-gradient(135deg, rgba(59,130,246,0.6) 0%, rgba(139,92,246,0.6) 100%)', border: '1px solid rgba(255,255,255,0.4)', boxShadow: '0 8px 20px rgba(59,130,246,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <Headset size={20} color="#fff" />
+              </button>
+              <button 
+                className="glass-button" 
                 onClick={handleCenterMap}
                 title="Pusatkan Lokasi"
                 style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'rgba(0,0,0,0.65)', border: '1px solid rgba(255,255,255,0.2)', boxShadow: '0 8px 20px rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
@@ -1033,11 +1266,45 @@ function App() {
             </div>
           )}
 
+          {/* GOD TIER OVERLAYS (Lean Angle & Elevation) */}
+          {!viewingRoute && !shareMode && (
+            <div style={{ position: 'absolute', bottom: '180px', left: '16px', display: 'flex', flexDirection: 'column', gap: '8px', zIndex: 40 }}>
+              {/* Lean Angle */}
+              <div className="glass-card" style={{ padding: '8px 12px', background: 'rgba(0,0,0,0.65)', border: '1px solid rgba(139,92,246,0.3)', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.4)' }}>
+                <Activity size={16} color="#c084fc" />
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ fontSize: '9px', color: '#c084fc', textTransform: 'uppercase', fontWeight: '800', letterSpacing: '1px' }}>Lean Angle</span>
+                  <span style={{ fontSize: '14px', fontWeight: '900', color: '#fff' }}>{currentLeanAngle}° <span style={{ fontSize: '9px', color: '#888' }}>Max {maxLeanAngle}°</span></span>
+                </div>
+              </div>
+              
+              {/* Topography */}
+              <div className="glass-card" style={{ padding: '8px 12px', background: 'rgba(0,0,0,0.65)', border: '1px solid rgba(59,130,246,0.3)', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.4)' }}>
+                <Navigation size={16} color="#60a5fa" />
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ fontSize: '9px', color: '#60a5fa', textTransform: 'uppercase', fontWeight: '800', letterSpacing: '1px' }}>Max Alt (Elev)</span>
+                  <span style={{ fontSize: '14px', fontWeight: '900', color: '#fff' }}>{maxAltitude} <span style={{ fontSize: '9px', color: '#888' }}>m DPL</span></span>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="dashboard-spacer"></div>
 
-          {/* MAIN START / STOP RECORDING BUTTON */}
+          {/* MAIN START / PAUSE / RESUME / STOP RECORDING BUTTONS */}
           {!viewingRoute && !shareMode && (
-            <div className="action-area" style={{ marginBottom: '16px' }}>
+            <div className="action-area" style={{ marginBottom: '16px', display: 'flex', gap: '16px', alignItems: 'center', justifyContent: 'center' }}>
+              {isTracking && (
+                <div 
+                  className="btn-start" 
+                  onClick={isPaused ? resumeTracking : pauseTracking}
+                  style={{ width: '56px', height: '56px' }}
+                >
+                  <div className="btn-inner" style={{ color: '#000', width: '40px', height: '40px' }}>
+                    {isPaused ? <Play size={22} fill="currentColor" style={{ marginLeft: '2px' }} /> : <Pause size={22} fill="currentColor" />}
+                  </div>
+                </div>
+              )}
               <div className={`btn-start ${isTracking ? 'recording' : ''}`} onClick={isTracking ? stopTracking : startTracking}>
                 <div className="btn-inner" style={{ color: '#000' }}>
                   {isTracking ? <Square size={28} fill="currentColor" /> : <Play size={32} fill="currentColor" style={{ marginLeft: '4px' }} />}
@@ -1050,11 +1317,33 @@ function App() {
         {!shareMode && (
           <div className="stats-panel glass-panel">
             <div className="stat-item">
-              <div className="stat-value">{viewingRoute ? Math.round(viewingRoute.avg_speed) : speed}<span>km/h</span></div>
+              <div className="stat-value">
+                {(() => {
+                  const rawSpd = viewingRoute ? Math.round(viewingRoute.avg_speed) : speed;
+                  return speedUnit === 'mph' ? Math.round(rawSpd * 0.621371) : rawSpd;
+                })()}
+                <span>{speedUnit === 'mph' ? 'mph' : 'km/h'}</span>
+              </div>
               <div className="stat-label">{viewingRoute ? 'Avg Spd' : 'Speed'}</div>
             </div>
             <div className="stat-item">
-              <div className="stat-value">{(viewingRoute ? viewingRoute.distance : distance).toFixed(1)}<span>km</span></div>
+              <div className="stat-value">
+                {(() => {
+                  const rawTop = viewingRoute ? (Math.round(viewingRoute.top_speed || viewingRoute.avg_speed * 1.3)) : topSpeed;
+                  return speedUnit === 'mph' ? Math.round(rawTop * 0.621371) : rawTop;
+                })()}
+                <span>{speedUnit === 'mph' ? 'mph' : 'km/h'}</span>
+              </div>
+              <div className="stat-label">Top Speed</div>
+            </div>
+            <div className="stat-item">
+              <div className="stat-value">
+                {(() => {
+                  const rawDist = viewingRoute ? viewingRoute.distance : distance;
+                  return distanceUnit === 'mi' ? (rawDist * 0.621371).toFixed(1) : rawDist.toFixed(1);
+                })()}
+                <span>{distanceUnit === 'mi' ? 'mi' : 'km'}</span>
+              </div>
               <div className="stat-label">Distance</div>
             </div>
             <div className="stat-item">
@@ -1079,17 +1368,38 @@ function App() {
               <div 
                 key={ride.id} 
                 className="glass-card"
-                onClick={() => {
-                  setViewingRoute(ride);
-                  setRoutePath(ride.route_path || []);
-                  setActiveTab('RIDE');
-                }}
                 style={{ cursor: 'pointer' }}
               >
-                <h3 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '6px', color: '#fff' }}>Ride on {new Date(ride.created_at).toLocaleDateString()}</h3>
-                <p style={{ fontSize: '13px', color: '#888', marginBottom: '16px', fontWeight: '500' }}>{Number(ride.distance).toFixed(2)} km • {formatTime(ride.time)}</p>
-                <div style={{ display: 'flex', alignItems: 'center', color: '#4a90e2', fontSize: '13px', fontWeight: '700' }}>
-                  View on Map <ChevronRight size={16} />
+                <div 
+                  onClick={() => {
+                    setViewingRoute(ride);
+                    setRoutePath(ride.route_path || []);
+                    setActiveTab('RIDE');
+                  }}
+                >
+                  <h3 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '6px', color: '#fff' }}>Ride on {new Date(ride.created_at).toLocaleDateString()}</h3>
+                  <p style={{ fontSize: '13px', color: '#888', marginBottom: '8px', fontWeight: '500' }}>
+                    {Number(ride.distance).toFixed(2)} km • {formatTime(ride.time)} • Avg {Math.round(ride.avg_speed)} km/h
+                    {ride.top_speed ? ` • Top ${Math.round(ride.top_speed)} km/h` : ''}
+                  </p>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div 
+                    onClick={() => {
+                      setViewingRoute(ride);
+                      setRoutePath(ride.route_path || []);
+                      setActiveTab('RIDE');
+                    }}
+                    style={{ display: 'flex', alignItems: 'center', color: '#4a90e2', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}
+                  >
+                    View on Map <ChevronRight size={16} />
+                  </div>
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); handleDeleteRide(ride.id); }}
+                    style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444', borderRadius: '10px', padding: '6px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', fontWeight: '700', transition: 'all 0.3s' }}
+                  >
+                    <Trash2 size={14} /> Hapus
+                  </button>
                 </div>
               </div>
             ))
@@ -1110,6 +1420,11 @@ function App() {
              <div style={{ marginTop: '8px', fontSize: '12px', color: inRadio ? '#4ade80' : '#666', fontWeight: '700' }}>
                ● {radioStatus}
              </div>
+             {inRadio && activeRoomCode && (
+               <div style={{ marginTop: '6px', fontSize: '14px', color: '#fff', fontWeight: '800', letterSpacing: '1px', background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.3)', padding: '6px 16px', borderRadius: '12px', display: 'inline-block' }}>
+                 🔑 {activeRoomCode}
+               </div>
+             )}
           </div>
 
           {!inRadio ? (
@@ -1214,34 +1529,6 @@ function App() {
       );
     }
 
-    if (activeTab === 'STATS') {
-      const totalKm = rides.reduce((acc, r) => acc + Number(r.distance), 0);
-      const totalTime = rides.reduce((acc, r) => acc + Number(r.time), 0);
-      
-      return (
-        <div className="glass-panel" style={{ flex: 1, padding: '24px', marginTop: '20px' }}>
-          <h2 style={{ fontSize: '20px', fontWeight: '800', marginBottom: '24px' }}>My Statistics</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
-            <div className="glass-card" style={{ textAlign: 'center' }}>
-              <Zap size={28} color="#f59e0b" style={{ margin: '0 auto 12px' }} />
-              <div style={{ fontSize: '28px', fontWeight: '900', letterSpacing: '-1px' }}>{totalKm.toFixed(1)}</div>
-              <div style={{ fontSize: '11px', color: '#888', textTransform: 'uppercase', marginTop: '4px', fontWeight: '700' }}>Total KM</div>
-            </div>
-            <div className="glass-card" style={{ textAlign: 'center' }}>
-              <Activity size={28} color="#10b981" style={{ margin: '0 auto 12px' }} />
-              <div style={{ fontSize: '28px', fontWeight: '900', letterSpacing: '-1px' }}>{rides.length}</div>
-              <div style={{ fontSize: '11px', color: '#888', textTransform: 'uppercase', marginTop: '4px', fontWeight: '700' }}>Total Rides</div>
-            </div>
-          </div>
-          
-          <div className="glass-card" style={{ textAlign: 'center' }}>
-             <div style={{ fontSize: '32px', fontWeight: '900', letterSpacing: '-1px' }}>{formatTime(totalTime)}</div>
-             <div style={{ fontSize: '12px', color: '#888', textTransform: 'uppercase', marginTop: '4px', fontWeight: '700' }}>Time in Saddle</div>
-          </div>
-        </div>
-      );
-    }
-
     if (activeTab === 'GARAGE') {
       const filteredBikes = bikeSearch.length > 0 
         ? bikeDatabase.filter(b => 
@@ -1280,8 +1567,22 @@ function App() {
                     <p style={{ fontSize: '12px', color: '#555', marginTop: '4px' }}>Honda, Yamaha, Kawasaki, Ducati, BMW, etc.</p>
                   </div>
                 ) : filteredBikes.length === 0 ? (
-                  <div style={{ textAlign: 'center', marginTop: '40px', color: '#666' }}>
-                    <p style={{ fontSize: '14px' }}>No results for "{bikeSearch}"</p>
+                  <div style={{ textAlign: 'center', marginTop: '24px', color: '#666' }}>
+                    <p style={{ fontSize: '14px', marginBottom: '16px' }}>Tidak ditemukan "{bikeSearch}"</p>
+                    <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '16px', padding: '16px', border: '1px solid rgba(255,255,255,0.1)', textAlign: 'left' }}>
+                      <p style={{ fontSize: '12px', color: '#aaa', marginBottom: '12px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px' }}>✏️ Tambah Motor Manual</p>
+                      <input className="glass-input" placeholder="Brand (contoh: Honda)" value={newBike.brand} onChange={(e) => setNewBike({...newBike, brand: e.target.value})} style={{ marginBottom: '8px', fontSize: '13px', padding: '10px 12px' }} />
+                      <input className="glass-input" placeholder="Nama Motor (contoh: Beat Street)" value={newBike.name} onChange={(e) => setNewBike({...newBike, name: e.target.value})} style={{ marginBottom: '8px', fontSize: '13px', padding: '10px 12px' }} />
+                      <input className="glass-input" placeholder="Tipe (contoh: Matic, Sport, Naked)" value={newBike.type} onChange={(e) => setNewBike({...newBike, type: e.target.value})} style={{ marginBottom: '12px', fontSize: '13px', padding: '10px 12px' }} />
+                      <button 
+                        className="glass-button primary" 
+                        onClick={() => { if (newBike.brand && newBike.name) handleSaveBike(newBike); }}
+                        disabled={!newBike.brand || !newBike.name}
+                        style={{ width: '100%', padding: '12px', fontSize: '13px', fontWeight: '700', opacity: (!newBike.brand || !newBike.name) ? 0.4 : 1 }}
+                      >
+                        + Tambah ke Garage
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   filteredBikes.map((bike, i) => (
@@ -1327,6 +1628,30 @@ function App() {
                     const totalKm = rides.reduce((sum, r) => sum + (r.distance || 0), 0);
                     const oilProgressKm = Math.max(0, totalKm - lastOilChangeKm);
                     const oilPercent = Math.min(100, (oilProgressKm / 2000) * 100);
+                    
+                    const tuning = tuningConfigs[bike.id] || { piston: '', tb: '', injector: '' };
+                    let estimatedKmL = 35; // Default for 150cc
+                    
+                    if (tuning.piston || tuning.tb || tuning.injector) {
+                      const piston = parseFloat(tuning.piston) || 57.3;
+                      const tb = parseFloat(tuning.tb) || 26;
+                      const injector = parseFloat(tuning.injector) || 100;
+                      
+                      const volMul = Math.pow(piston / 57.3, 2);
+                      const airMul = Math.pow(tb / 26, 1.5);
+                      const fuelMul = injector / 100;
+                      
+                      let modifier = (volMul * 0.4) + (airMul * 0.3) + (fuelMul * 0.3);
+                      if (modifier < 0.5) modifier = 0.5;
+                      if (modifier > 4) modifier = 4;
+                      estimatedKmL = 35 / modifier;
+                    }
+                    
+                    const updateTuning = (key, val) => {
+                      const updated = { ...tuningConfigs, [bike.id]: { ...tuning, [key]: val } };
+                      setTuningConfigs(updated);
+                      localStorage.setItem('mokat_tuning_configs', JSON.stringify(updated));
+                    };
 
                     return (
                       <div key={bike.id} className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '14px', padding: '16px' }}>
@@ -1378,6 +1703,49 @@ function App() {
                               <div style={{ width: `${oilPercent}%`, height: '100%', background: oilPercent >= 90 ? '#ef4444' : 'linear-gradient(90deg, #4ade80 0%, #4a90e2 100%)', transition: 'width 0.5s ease' }}></div>
                             </div>
                           </div>
+
+                          {/* Estimasi Konsumsi BBM & Biaya */}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', padding: '8px 12px', borderRadius: '10px', marginTop: '4px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <Fuel size={14} color="#f59e0b" />
+                              <span style={{ fontSize: '11px', color: '#ccc', fontWeight: '600' }}>Est. Konsumsi BBM (1:{estimatedKmL.toFixed(1)} km/L)</span>
+                            </div>
+                            <span style={{ fontSize: '12px', fontWeight: '800', color: '#f59e0b' }}>{(totalKm / estimatedKmL).toFixed(1)} Liter</span>
+                          </div>
+                        </div>
+
+                        {/* BORE UP / TUNING CONFIG */}
+                        <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '14px', padding: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                          <div 
+                            style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
+                            onClick={() => setExpandedTuningBike(expandedTuningBike === bike.id ? null : bike.id)}
+                          >
+                            <span style={{ fontSize: '11px', fontWeight: '800', color: '#a855f7', textTransform: 'uppercase', letterSpacing: '1px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              ⚙️ Tuning / Bore Up Specs
+                            </span>
+                            <ChevronDown size={14} color="#a855f7" style={{ transform: expandedTuningBike === bike.id ? 'rotate(180deg)' : 'none', transition: '0.3s' }} />
+                          </div>
+
+                          {expandedTuningBike === bike.id && (
+                            <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                <span style={{ fontSize: '11px', color: '#888', width: '60px' }}>Piston:</span>
+                                <input className="glass-input" type="number" placeholder="e.g. 62" value={tuning.piston} onChange={(e) => updateTuning('piston', e.target.value)} style={{ flex: 1, padding: '6px 10px', fontSize: '12px' }} />
+                                <span style={{ fontSize: '11px', color: '#888', width: '30px' }}>mm</span>
+                              </div>
+                              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                <span style={{ fontSize: '11px', color: '#888', width: '60px' }}>T. Body:</span>
+                                <input className="glass-input" type="number" placeholder="e.g. 34" value={tuning.tb} onChange={(e) => updateTuning('tb', e.target.value)} style={{ flex: 1, padding: '6px 10px', fontSize: '12px' }} />
+                                <span style={{ fontSize: '11px', color: '#888', width: '30px' }}>mm</span>
+                              </div>
+                              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                <span style={{ fontSize: '11px', color: '#888', width: '60px' }}>Injector:</span>
+                                <input className="glass-input" type="number" placeholder="e.g. 150" value={tuning.injector} onChange={(e) => updateTuning('injector', e.target.value)} style={{ flex: 1, padding: '6px 10px', fontSize: '12px' }} />
+                                <span style={{ fontSize: '11px', color: '#888', width: '30px' }}>cc/m</span>
+                              </div>
+                              <p style={{ fontSize: '10px', color: '#666', marginTop: '4px' }}>* Sistem akan otomatis mengkalkulasi ulang estimasi konsumsi BBM berdasarkan flow mesin.</p>
+                            </div>
+                          )}
                         </div>
                       </div>
                     );
@@ -1428,6 +1796,9 @@ function App() {
                   value={emergencyContact} 
                   onChange={(e) => {
                     setEmergencyContact(e.target.value);
+                    if (session?.user?.id) {
+                      localStorage.setItem('mokat_emergency_contact_' + session.user.id, e.target.value);
+                    }
                     localStorage.setItem('mokat_emergency_contact', e.target.value);
                   }}
                   placeholder="e.g. 081234567890 (No. WA Kontak Darurat)"
@@ -1595,10 +1966,17 @@ function App() {
               >
                 {!(shareMode && themeConfigs[shareTheme]?.hideMap) && (
                   <TileLayer
-                    url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                    url={
+                      mapStyle === 'SATELLITE' 
+                        ? "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                        : mapStyle === 'STREET'
+                        ? "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                        : "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                    }
                     subdomains={['a', 'b', 'c', 'd']}
                     maxZoom={19}
                     attribution=""
+                    crossOrigin="anonymous"
                   />
                 )}
                 {viewingRoute && viewingRoute.route_path && <MapBoundsFitter path={viewingRoute.route_path} />}
@@ -1609,6 +1987,15 @@ function App() {
                   opacity={1} 
                 />
                 {!viewingRoute && <Marker position={currentPosition} icon={bikeIcon} />}
+                
+                {/* LIVE GROUP RADAR MARKERS */}
+                {!viewingRoute && Object.entries(groupLocations).map(([uid, loc]) => {
+                   if (Date.now() - loc.updatedAt > 60000) return null; // Hide if stale > 1 min
+                   const isFast = loc.speed > 80;
+                   const radarHtml = `<div style="background:${isFast ? '#ef4444' : '#3b82f6'}; border:2px solid #fff; width:16px; height:16px; border-radius:50%; box-shadow: 0 0 10px ${isFast ? '#ef4444' : '#3b82f6'}; display:flex; align-items:center; justify-content:center"><span style="position:absolute; top:20px; font-size:10px; font-weight:bold; color:#fff; background:rgba(0,0,0,0.6); padding:2px 4px; border-radius:4px; white-space:nowrap">${loc.speed} km/h</span></div>`;
+                   const radarIcon = L.divIcon({ html: radarHtml, className: 'radar-icon', iconSize: [16,16], iconAnchor: [8,8] });
+                   return <Marker key={uid} position={[loc.lat, loc.lng]} icon={radarIcon} />;
+                })}
               </MapContainer>
             </div>
           )}
@@ -1630,6 +2017,10 @@ function App() {
                   <div>
                      <div style={getShareStyles().statVal}>{Number(viewingRoute.distance).toFixed(1)} <span style={{fontSize:'0.5em', fontWeight:'normal'}}>km</span></div>
                      <div style={getShareStyles().statLbl}>Distance</div>
+                  </div>
+                  <div>
+                     <div style={getShareStyles().statVal}>{Math.round(viewingRoute.top_speed || viewingRoute.avg_speed * 1.3)} <span style={{fontSize:'0.5em', fontWeight:'normal'}}>km/h</span></div>
+                     <div style={getShareStyles().statLbl}>Top Speed</div>
                   </div>
                   <div>
                      <div style={getShareStyles().statVal}>{Math.round(viewingRoute.avg_speed)} <span style={{fontSize:'0.5em', fontWeight:'normal'}}>km/h</span></div>
@@ -1848,6 +2239,30 @@ function App() {
                 </button>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* PWA UPDATE BANNER */}
+      {needRefresh && (
+        <div style={{ position: 'fixed', bottom: '80px', left: '16px', right: '16px', background: 'rgba(59,130,246,0.95)', backdropFilter: 'blur(10px)', padding: '16px', borderRadius: '16px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', flexDirection: 'column', gap: '12px', border: '1px solid rgba(255,255,255,0.2)' }}>
+          <div>
+            <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#fff', marginBottom: '4px' }}>🚀 Versi Baru Tersedia!</h3>
+            <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.8)' }}>Update sekarang untuk mendapatkan fitur terbaru dan perbaikan sistem.</p>
+          </div>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button 
+              onClick={() => updateServiceWorker(true)} 
+              style={{ flex: 1, padding: '10px', borderRadius: '10px', background: '#fff', color: '#3b82f6', fontWeight: '800', border: 'none', fontSize: '13px' }}
+            >
+              Update Sekarang
+            </button>
+            <button 
+              onClick={() => setNeedRefresh(false)} 
+              style={{ padding: '10px 16px', borderRadius: '10px', background: 'rgba(0,0,0,0.2)', color: '#fff', fontWeight: '700', border: 'none', fontSize: '13px' }}
+            >
+              Nanti
+            </button>
           </div>
         </div>
       )}
