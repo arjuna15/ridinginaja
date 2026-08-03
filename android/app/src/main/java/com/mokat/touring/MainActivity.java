@@ -49,4 +49,21 @@ public class MainActivity extends BridgeActivity {
             bridge.getWebView().resumeTimers();
         }
     }
+
+    @Override
+    protected void onUserLeaveHint() {
+        super.onUserLeaveHint();
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            try {
+                // Enter Picture-in-Picture mode automatically to keep the app in foreground
+                // This bypasses Android 14's strict background microphone restrictions
+                android.app.PictureInPictureParams params = new android.app.PictureInPictureParams.Builder()
+                    .setAspectRatio(new android.util.Rational(16, 9))
+                    .build();
+                enterPictureInPictureMode(params);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
 }
