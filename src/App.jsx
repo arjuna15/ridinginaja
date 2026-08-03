@@ -677,9 +677,16 @@ function App() {
 
   const handleDeleteBike = async (bikeId) => {
     if (!confirm('Yakin ingin menghapus motor ini dari garage?')) return;
-    const { error } = await supabase.from('motorcycles').delete().eq('id', bikeId);
+    const { data, error } = await supabase.from('motorcycles').delete().eq('id', bikeId).select();
     if (!error) {
+      if (data && data.length === 0) {
+        alert("Gagal menghapus: Akses ditolak oleh Database (Supabase RLS). Silakan tambahkan 'DELETE' policy di Supabase Dashboard untuk tabel motorcycles.");
+        return;
+      }
       setBikes(bikes.filter(b => b.id !== bikeId));
+      if (selectedBike?.id === bikeId) {
+        setSelectedBike(null);
+      }
     } else {
       console.error('Failed to delete bike:', error);
       alert('Gagal menghapus motor: ' + error.message);
@@ -688,8 +695,12 @@ function App() {
 
   const handleDeleteRide = async (rideId) => {
     if (!confirm('Yakin ingin menghapus riwayat ride ini?')) return;
-    const { error } = await supabase.from('rides').delete().eq('id', rideId);
+    const { data, error } = await supabase.from('rides').delete().eq('id', rideId).select();
     if (!error) {
+      if (data && data.length === 0) {
+        alert("Gagal menghapus: Akses ditolak oleh Database (Supabase RLS). Silakan tambahkan 'DELETE' policy di Supabase Dashboard untuk tabel rides.");
+        return;
+      }
       setRides(rides.filter(r => r.id !== rideId));
     } else {
       console.error('Failed to delete ride:', error);
