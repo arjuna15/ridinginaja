@@ -1284,7 +1284,7 @@ function App() {
 
           {/* GOD TIER OVERLAYS (Lean Angle & Elevation) */}
           {!viewingRoute && !shareMode && (
-            <div style={{ position: 'absolute', bottom: '180px', left: '16px', display: 'flex', flexDirection: 'column', gap: '8px', zIndex: 40 }}>
+            <div style={{ position: 'absolute', top: '100px', left: '16px', display: 'flex', flexDirection: 'column', gap: '8px', zIndex: 40 }}>
               {/* Lean Angle */}
               <div className="glass-card" style={{ padding: '8px 12px', background: 'rgba(0,0,0,0.65)', border: '1px solid rgba(139,92,246,0.3)', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.4)' }}>
                 <Activity size={16} color="#c084fc" />
