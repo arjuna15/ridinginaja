@@ -49,7 +49,11 @@ public class RadioForegroundService extends Service {
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .build();
 
-        startForeground(NOTIFICATION_ID, notification);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            startForeground(NOTIFICATION_ID, notification, android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE | android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION);
+        } else {
+            startForeground(NOTIFICATION_ID, notification);
+        }
 
         // Acquire partial wake lock to prevent CPU sleep
         PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);

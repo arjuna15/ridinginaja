@@ -39,7 +39,7 @@
             android:name=".RadioForegroundService"
             android:enabled="true"
             android:exported="false"
-            android:foregroundServiceType="microphone" />
+            android:foregroundServiceType="microphone|location" />
     </application>
 
     <!-- Permissions -->
