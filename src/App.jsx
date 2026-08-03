@@ -168,6 +168,7 @@ function App() {
   const [isMuted, setIsMuted] = useState(false);
   const [audioInputs, setAudioInputs] = useState([]);
   const [selectedAudioInput, setSelectedAudioInput] = useState('');
+  const [isMicDropdownOpen, setIsMicDropdownOpen] = useState(false);
   const [roomCode, setRoomCode] = useState('');
   const [activeRoomCode, setActiveRoomCode] = useState('');
   
@@ -1505,22 +1506,86 @@ function App() {
                     </div>
                  </div>
 
-                 {/* Microphone Device Picker for Laptops/Desktops */}
+                 {/* Custom Microphone Device Picker for Laptops/Desktops */}
                  {audioInputs.length > 1 && (
                    <div style={{ background: 'rgba(255,255,255,0.04)', padding: '12px 16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                     <label style={{ fontSize: '11px', color: '#888', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '700', display: 'block', marginBottom: '6px' }}>Select Laptop Microphone:</label>
-                     <select 
-                       className="glass-input" 
-                       value={selectedAudioInput} 
-                       onChange={(e) => switchMicrophone(e.target.value)}
-                       style={{ fontSize: '13px', padding: '8px', background: 'rgba(0,0,0,0.5)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)' }}
-                     >
-                       {audioInputs.map((mic, idx) => (
-                         <option key={mic.deviceId || idx} value={mic.deviceId} style={{ background: '#111', color: '#fff' }}>
-                           {mic.label || `Microphone ${idx + 1}`}
-                         </option>
-                       ))}
-                     </select>
+                     <label style={{ fontSize: '11px', color: '#888', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '700', display: 'block', marginBottom: '8px' }}>Select Microphone:</label>
+                     <div style={{ position: 'relative' }}>
+                       <div 
+                         onClick={() => setIsMicDropdownOpen(!isMicDropdownOpen)}
+                         style={{ 
+                           background: 'rgba(0,0,0,0.5)', 
+                           border: '1px solid rgba(255,255,255,0.2)', 
+                           borderRadius: '8px', 
+                           padding: '10px 14px', 
+                           color: '#fff', 
+                           fontSize: '13px', 
+                           display: 'flex', 
+                           justifyContent: 'space-between', 
+                           alignItems: 'center',
+                           cursor: 'pointer',
+                           boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                           transition: 'all 0.2s ease'
+                         }}
+                       >
+                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                           <Mic size={16} color="#60a5fa" />
+                           <span style={{ fontWeight: '500' }}>
+                             {audioInputs.find(m => m.deviceId === selectedAudioInput)?.label || 'Default Microphone'}
+                           </span>
+                         </div>
+                         <ChevronDown size={16} color="#aaa" style={{ transform: isMicDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }} />
+                       </div>
+                       
+                       {/* Dropdown Menu */}
+                       {isMicDropdownOpen && (
+                         <div style={{ 
+                           position: 'absolute', 
+                           top: '100%', 
+                           left: 0, 
+                           right: 0, 
+                           marginTop: '8px', 
+                           background: 'rgba(20,20,24,0.95)', 
+                           backdropFilter: 'blur(16px)', 
+                           border: '1px solid rgba(255,255,255,0.15)', 
+                           borderRadius: '10px', 
+                           overflow: 'hidden', 
+                           zIndex: 100,
+                           boxShadow: '0 8px 32px rgba(0,0,0,0.6)'
+                         }}>
+                           {audioInputs.map((mic, idx) => {
+                             const isSelected = mic.deviceId === selectedAudioInput;
+                             return (
+                               <div 
+                                 key={mic.deviceId || idx}
+                                 onClick={() => {
+                                   switchMicrophone(mic.deviceId);
+                                   setIsMicDropdownOpen(false);
+                                 }}
+                                 style={{ 
+                                   padding: '12px 14px', 
+                                   color: isSelected ? '#60a5fa' : '#e4e4e7', 
+                                   background: isSelected ? 'rgba(96,165,250,0.1)' : 'transparent',
+                                   fontSize: '13px', 
+                                   fontWeight: isSelected ? '600' : '400',
+                                   cursor: 'pointer',
+                                   borderBottom: idx < audioInputs.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
+                                   display: 'flex',
+                                   alignItems: 'center',
+                                   gap: '10px',
+                                   transition: 'background 0.2s'
+                                 }}
+                                 onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
+                                 onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}
+                               >
+                                 <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: isSelected ? '#60a5fa' : 'transparent' }}></div>
+                                 {mic.label || `Microphone ${idx + 1}`}
+                               </div>
+                             );
+                           })}
+                         </div>
+                       )}
+                     </div>
                    </div>
                  )}
 
