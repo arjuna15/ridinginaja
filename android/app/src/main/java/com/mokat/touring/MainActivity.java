@@ -18,6 +18,7 @@ public class MainActivity extends BridgeActivity {
         
         // Register RadioService Plugin for Capacitor
         registerPlugin(RadioServicePlugin.class);
+        registerPlugin(AgoraPlugin.class);
 
         // Request runtime permissions on startup so WebView can use them
         String[] permissions = {

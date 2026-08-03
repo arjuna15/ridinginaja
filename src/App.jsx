@@ -8,6 +8,8 @@ import { useRegisterSW } from 'virtual:pwa-register/react';
 import 'leaflet/dist/leaflet.css';
 import { registerPlugin, Capacitor } from '@capacitor/core';
 import { supabase } from './supabaseClient';
+import { AgoraRadio } from './AgoraRadioPlugin';
+import { generateAgoraToken } from './agoraToken';
 import bikeDatabase from './bikeDatabase';
 
 const RadioService = registerPlugin('RadioService');
@@ -171,6 +173,9 @@ function App() {
   const [isMicDropdownOpen, setIsMicDropdownOpen] = useState(false);
   const [roomCode, setRoomCode] = useState('');
   const [activeRoomCode, setActiveRoomCode] = useState('');
+  const AGORA_APP_ID = "09671cbe777d40a199d330097b84fdb9";
+  const AGORA_CERT = "8816ab36282644e09ad6e154f373ab68";
+
   
   const generateRandomCode = () => {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -188,6 +193,25 @@ function App() {
   const watchIdRef = useRef(null);
   const timerRef = useRef(null);
   const prevPosRef = useRef(null);
+
+  
+  useEffect(() => {
+    if (Capacitor.isNativePlatform()) {
+      const u1 = AgoraRadio.addListener('onUserJoined', (info) => {
+        setRadioPeers(prev => {
+          if (prev.find(p => p.id === info.uid)) return prev;
+          return [...prev, { id: info.uid, email: 'Rider ' + info.uid }];
+        });
+      });
+      const u2 = AgoraRadio.addListener('onUserOffline', (info) => {
+        setRadioPeers(prev => prev.filter(p => p.id !== info.uid));
+      });
+      return () => {
+        if(u1) u1.remove();
+        if(u2) u2.remove();
+      };
+    }
+  }, []);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
