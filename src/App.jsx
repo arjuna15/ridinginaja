@@ -2176,9 +2176,8 @@ function App() {
               <span className={`dot ${isTracking ? 'recording' : 'ready'}`}></span>
               {statusText}
             </div>
-            <button className="icon-btn" onClick={handleSignOut} title="Sign Out">
-              <LogOut size={20} />
-            </button>
+            {/* Empty div to balance space-between so the status badge stays perfectly centered */}
+            <div style={{ width: '40px' }}></div>
           </header>
 
           {renderContent()}
