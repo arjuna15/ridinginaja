@@ -24,7 +24,8 @@ public class MainActivity extends BridgeActivity {
             Manifest.permission.RECORD_AUDIO,
             Manifest.permission.ACCESS_FINE_LOCATION,
             Manifest.permission.ACCESS_COARSE_LOCATION,
-            Manifest.permission.CAMERA
+            Manifest.permission.CAMERA,
+            "android.permission.POST_NOTIFICATIONS" // Required for Foreground Service on API 33+
         };
 
         boolean needRequest = false;
