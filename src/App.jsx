@@ -919,7 +919,11 @@ function App() {
       console.error(err);
       setInRadio(false);
       setRadioStatus("Failed to access Microphone");
-      alert("Gagal mengakses mikrofon: " + err.message);
+      if (err.name === 'NotAllowedError' || err.message.toLowerCase().includes('permission')) {
+        alert("Akses Mikrofon diblokir oleh browser! 🔒\n\nCara memperbaiki:\n1. Klik ikon Gembok 🔒 di kiri atas URL (samping ridinginaja.vercel.app)\n2. Pilih 'Site settings' (Setelan Situs)\n3. Ubah izin Microphone (Mikrofon) menjadi 'Allow' (Izinkan)\n4. Refresh halaman ini.");
+      } else {
+        alert("Gagal mengakses mikrofon: " + err.message);
+      }
     }
   };
 
