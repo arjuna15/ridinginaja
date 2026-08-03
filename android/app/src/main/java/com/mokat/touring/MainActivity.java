@@ -40,4 +40,13 @@ public class MainActivity extends BridgeActivity {
             ActivityCompat.requestPermissions(this, permissions, PERMISSION_REQUEST_CODE);
         }
     }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        // Prevent Chromium from pausing Javascript and WebRTC when screen is off
+        if (bridge != null && bridge.getWebView() != null) {
+            bridge.getWebView().resumeTimers();
+        }
+    }
 }
